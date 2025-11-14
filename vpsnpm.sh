@@ -64,11 +64,12 @@ install_node() {
 
     case "$OS" in
         debian|ubuntu|devuan)
-            apt update
-            apt install -y nodejs npm
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
             ;;
         centos|rhel|fedora)
-            dnf install -y nodejs
+            curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo -E bash -
+            sudo dnf install -y nodejs
             ;;
         alpine)
             apk update
@@ -204,8 +205,8 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
 
     echo -e "\n----- 🚀 节点信息 (Base64) -----"
     if [ -f "${SUB_FILE}" ]; then
-        cat "${SUB_FILE}"
-        echo -e "-----------------------------\n"
+        cat "${SUB_FILE}" | base64 | tr -d '\n'
+        echo -e "\n-----------------------------\n"
     else
         echo "❌ 警告：未在预期时间内找到节点信息文件 ${SUB_FILE}。"
         echo "⚠️ 请稍后手动通过 SSH 连接检查：cat ${SUB_FILE}"
