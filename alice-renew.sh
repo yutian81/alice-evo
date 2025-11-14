@@ -13,8 +13,8 @@ ALICE_SSH_HOST="${ALICE_ACCOUNT_USER}.evo.host.aliceinit.dev" # 默认 SSH 主�
 PRODUCT_ID=${PRODUCT_ID:-38}                                  # 默认：SLC.Evo.Pro (ID 38)
 OS_ID=${OS_ID:-1}                                             # 默认：Debian 12 (ID 1)
 DEPLOY_TIME_HOURS=${DEPLOY_TIME_HOURS:-24}                    # 默认：24 小时
-SSH_KEY_NAME="${SSH_KEY_NAME:-alice-yutian81}"                # 目标 SSH 公钥的名称
-SSH_KEY_ID=""                                                 # 将通过脚本获取
+ALICE_SSH_KEY_NAME="${ALICE_SSH_KEY_NAME:-alice-yutian81}"    # 目标 SSH 公钥的名称
+ALICE_SSH_KEY_ID=""                                           # 将通过脚本获取
 
 # Alice API 端点
 API_BASE_URL="https://app.alice.ws/cli/v1"
@@ -50,8 +50,8 @@ check_config() {
         echo "❌ 错误：ALICE_CLIENT_ID 或 ALICE_API_SECRET 变量未设置。" >&2
         exit 1
     fi
-    if [ -z "$SSH_KEY_NAME" ]; then
-        echo "❌ 错误：SSH_KEY_NAME 未设置，无法自动获取 SSH Key ID。" >&2
+    if [ -z "$ALICE_SSH_KEY_NAME" ]; then
+        echo "❌ 错误：ALICE_SSH_KEY_NAME 未设置，无法自动获取 SSH Key ID。" >&2
         exit 1
     fi
 }
@@ -168,12 +168,7 @@ destroy_instance() {
 
 # 创建实例（默认时长24小时）
 deploy_instance() {
-    local key_info="(未指定 SSH Key)"
-    if [ -n "$SSH_KEY_ID" ]; then
-        key_info="SSH Key ID: ${SSH_KEY_ID}"
-    fi
-
-    echo -e "\n🚀 正在部署新实例 (Plan ID: ${PRODUCT_ID}, OS ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h, ${key_info})..." >&2
+    echo -e "\n🚀 正在部署新实例 (Plan ID: ${PRODUCT_ID}, OS ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h..." >&2
     
     CURL_CMD="curl -L -s -X POST \"$API_DEPLOY_URL\" \
         -H \"Authorization: Bearer $AUTH_TOKEN\" \
@@ -181,8 +176,8 @@ deploy_instance() {
         -F \"os_id=$OS_ID\" \
         -F \"time=$DEPLOY_TIME_HOURS\""
 
-    if [ -n "$SSH_KEY_ID" ]; then
-        CURL_CMD="$CURL_CMD -F \"sshKey=$SSH_KEY_ID\""
+    if [ -n "$ALICE_SSH_KEY_ID" ]; then
+        CURL_CMD="$CURL_CMD -F \"sshKey=$ALICE_SSH_KEY_ID\""
     fi
 
     RESPONSE=$(eval "$CURL_CMD")
@@ -356,7 +351,7 @@ main() {
     check_jq
 
     # 自动获取 SSH Key ID
-    SSH_KEY_ID=$(get_ssh_key_id "$SSH_KEY_NAME")
+    ALICE_SSH_KEY_ID=$(get_ssh_key_id "$ALICE_SSH_KEY_NAME")
     GET_KEY_STATUS=$?
     if [ "$GET_KEY_STATUS" -ne 0 ]; then
         echo "❌ 无法获取 SSH Key ID，流程终止。" >&2
