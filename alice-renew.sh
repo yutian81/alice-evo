@@ -29,6 +29,7 @@ TG_CHAT_ID="${TG_CHAT_ID}"
 TG_API_BASE="${TG_API_BASE:-https://api.telegram.org}" # 默认使用官方 API
 
 # 脚本中的 UUID/ARGO 等配置也需要从 GitHub action secrets 传入
+SUB_NAME="${NAME:-ALICE}"
 NODEJS_COMMAND="
 curl -o vpsnpm.sh -Ls \"https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh\"
 chmod +x vpsnpm.sh
@@ -39,7 +40,7 @@ export NEZHA_KEY=\"${NEZHA_KEY:-}\"
 export ARGO_DOMAIN=\"${ARGO_DOMAIN:-}\"
 export ARGO_AUTH=\"${ARGO_AUTH:-}\"
 export CFIP=\"${CFIP:-cf.090227.xyz}\"
-export NAME=\"${NAME:-ALICE}\"
+export NAME=\"${SUB_NAME}\"
 ./vpsnpm.sh
 "
 
