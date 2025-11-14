@@ -40,21 +40,11 @@ jobs:
       - name: 🚀 执行 Alice Evo 自动化部署脚本
         id: deploy
         env:
-          # Alice Evo 认证信息
           ALICE_CLIENT_ID: ${{ secrets.ALICE_CLIENT_ID }}
           ALICE_API_SECRET: ${{ secrets.ALICE_API_SECRET }}
           ALICE_ACCOUNT_USER: ${{ secrets.ALICE_ACCOUNT_USER }}
           ALICE_SSH_KEY_NAME: ${{ secrets.ALICE_SSH_KEY_NAME }}
-          # 节点配置参数
-          UUID: ${{ secrets.UUID }}
-          ARGO_DOMAIN: ${{ secrets.ARGO_DOMAIN }}
-          ARGO_AUTH: ${{ secrets.ARGO_AUTH }}
-          NEZHA_SERVER: ${{ secrets.NEZHA_SERVER }}
-          NEZHA_PORT: ${{ secrets.NEZHA_PORT }}
-          NEZHA_KEY: ${{ secrets.NEZHA_KEY }}
-          CFIP: ${{ secrets.CFIP }}
-          NAME: ${{ secrets.NAME }}
-          # TG通知参数
+          NODEJS_COMMAND: ${{ secrets.NODEJS_COMMAND }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
