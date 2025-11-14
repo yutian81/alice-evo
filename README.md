@@ -26,13 +26,13 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 ### 必须变量
 - **ALICE_CLIENT_ID**
 - **ALICE_API_SECRET**
+- **ALICE_SSH_KEY_NAME**：公钥名称
 - **ALICE_SSH_KEY**：私钥内容
 - **ARGO_DOMAIN**：重建实例后保持argo节点可用
 - **ARGO_AUTH**：重建实例后保持argo节点可用
 
 ### 可选变量
 - ALICE_ACCOUNT_USER：账号用户名
-- ALICE_SSH_KEY_NAME：公钥名
 - UUID：哪吒需要, 在 alice-renew.sh 中修改，否则 action 终端输出的节点信息不全
 - NEZHA_SERVER：哪吒需要
 - NEZHA_PORT：哪吒v0需要
