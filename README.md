@@ -28,17 +28,10 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - **ALICE_API_SECRET**
 - **ALICE_SSH_KEY_NAME**：公钥名称
 - **ALICE_SSH_KEY**：私钥内容
-- **ARGO_DOMAIN**：重建实例后保持argo节点可用
-- **ARGO_AUTH**：重建实例后保持argo节点可用
+- **NODEJS_COMMAND**: nodejs-argo远程脚本，必须包含 `ARGO_DOMAIN` 和 `ARGO_AUTH` 两个外置变量，内容为上述 `全自动安装代码`
 
 ### 可选变量
-- ALICE_ACCOUNT_USER：账号用户名
-- UUID：哪吒需要
-- NEZHA_SERVER：哪吒需要
-- NEZHA_PORT：哪吒v0需要
-- NEZHA_KEY：哪吒需要
-- CFIP：CF优选域名或IP
-- NAME：节点前缀名
+- ALICE_ACCOUNT_USER：alice账号用户名
 - TG_BOT_TOKEN：TG通知需要
 - TG_CHAT_ID：TG通知需要
 
