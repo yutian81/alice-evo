@@ -236,7 +236,7 @@ IPv4 地址: <code>${NEW_IP}</code>
 IPv6 地址: <code>${NEW_IPV6}</code>
 主机名: <code>${NEW_HOST}</code>
 用户名: <code>${NEW_USER}</code>
-密码: <code>${NEW_PASS:-(使用SSH Key)}</code>
+密码: <code>${NEW_PASS:}</code>
 "
 
         # 构造 Telegram 成功消息
@@ -247,7 +247,7 @@ ${DETAILS_TEXT}
 ========================
 EOF
         )
-        TG_SUCCESS_MSG=$(escape_html "$TG_SUCCESS_MSG")
+        # TG_SUCCESS_MSG=$(escape_html "$TG_SUCCESS_MSG")
         send_tg_notification "$TG_SUCCESS_MSG"
 
         # 打印到 stderr
@@ -272,7 +272,7 @@ EOF
 请检查账户余额或 API 配置。
 EOF
         )
-        TG_FAIL_MSG=$(escape_html "$TG_FAIL_MSG")
+        # TG_FAIL_MSG=$(escape_html "$TG_FAIL_MSG")
         send_tg_notification "$TG_FAIL_MSG"
 
         echo "状态: ❌ 创建失败 (API 错误 - Status: $API_STATUS)" >&2
@@ -395,11 +395,10 @@ main() {
     local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
         echo -e "\n🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功完成！"
-        echo -e "\n🎉 由于Github action的限制，日志中输出的节点内容与 secret 相关的信息会被隐藏"
-        echo -e "\n🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取完整节点内容"
-        echo -e "\n🎉 SSH连接信息：IP: ${TARGET_IP}, 端口: 22, 用户名: ${NEW_USER}, 密码: ${NEW_PASS}"
+        echo -e "🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取完整节点内容"
+        echo -e "🎉 SSH连接信息：IP: ${TARGET_IP}, 端口: 22, 用户名: ${NEW_USER}, 密码: ${NEW_PASS}"
     else
-        echo -e "\n❌ 流程失败：远程配置脚本执行失败。实例 ${NEW_ID} 已创建，请手动使用 IP ${NEW_IP} 检查。"
+        echo -e "\n❌ 流程失败：远程配置脚本执行失败。实例 ${NEW_ID} 已创建，请登录 ssh 检查。"
         exit 1
     fi
 }
