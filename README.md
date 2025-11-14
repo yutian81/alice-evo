@@ -22,13 +22,30 @@ NAME=IDX \
 bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vpsnpm.sh)
 ```
 
-## alice alive
-### 变量
-- ALICE_CLIENT_ID
-- ALICE_API_SECRET
+## alice auto deploy
+### 必须变量
+- **ALICE_CLIENT_ID**
+- **ALICE_API_SECRET**
+- **ALICE_SSH_KEY**：私钥内容
+- **ARGO_DOMAIN**：重建实例后保持argo节点可用
+- **ARGO_AUTH**：重建实例后保持argo节点可用
 
-### 常量
-- **EVO 实例可选方案**
+### 可选变量
+- ALICE_ACCOUNT_USER：账号用户名
+- ALICE_SSH_KEY_NAME：公钥名
+- UUID：哪吒需要
+- NEZHA_SERVER：哪吒需要
+- NEZHA_PORT：哪吒v0需要
+- NEZHA_KEY：哪吒需要
+- CFIP：CF优选域名或IP
+- NAME：节点前缀名
+- TG_BOT_TOKEN：TG通知需要
+- TG_CHAT_ID：TG通知需要
+
+### 实例参数配置
+- PRODUCT_ID：部署方案ID，可选 38 | 39 | 40 | 41
+- OS_ID：部署系统ID，可选 1-10
+- DEPLOY_TIME_HOURS：部署系统时长，可选1-24，单位：小时
 
 | 参数   | ID值   | 名称    | 注释    |
 | ------ | ----- | ------ |-------- |
@@ -39,18 +56,18 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 
 - **EVO 实例可选系统**
 
-| 参数   | ID值   | 名称   | 版本参数   | ID值   | 版本号 |
+| 参数   | ID值   | 系统   | 版本参数   | ID值   | 版本号 |
 | ------ | ----- | ------ |-----------|---------|------|
-| group_id | 1 | Debian | OD_ID | 1 | Debian 12 (Bookworm) Minimal |
-| group_id | 1 | Debian | OD_ID | 2 | Debian 11 (Bullseye) Minimal |
-| group_id | 1 | Debian | OD_ID | 10 | Debian 12 DevKit |
-| group_id | 2 | Ubuntu | OD_ID | 3 | Ubuntu Server 20.04 LTS Minimal |
-| group_id | 2 | Ubuntu | OD_ID | 4 | Ubuntu Server 22.04 LTS Minimal |
-| group_id | 3 | Centos | OD_ID | 5 | CentOS 7 Minimal |
-| group_id | 3 | Centos | OD_ID | 6 | CentOS Stream 9 Minimal |
-| group_id | 4 | AlmaLinux | OD_ID | 7 | AlmaLinux 8 Minimal |
-| group_id | 4 | AlmaLinux | OD_ID | 8 | AlmaLinux 9 Latest |
-| group_id | 6 | Alpine Linux | OD_ID | 9 | Alpine Linux 3.19 |
+| group_id | 1 | Debian | OS_ID | 1 | Debian 12 (Bookworm) Minimal |
+| group_id | 1 | Debian | OS_ID | 2 | Debian 11 (Bullseye) Minimal |
+| group_id | 1 | Debian | OS_ID | 10 | Debian 12 DevKit |
+| group_id | 2 | Ubuntu | OS_ID | 3 | Ubuntu Server 20.04 LTS Minimal |
+| group_id | 2 | Ubuntu | OS_ID | 4 | Ubuntu Server 22.04 LTS Minimal |
+| group_id | 3 | Centos | OS_ID | 5 | CentOS 7 Minimal |
+| group_id | 3 | Centos | OS_ID | 6 | CentOS Stream 9 Minimal |
+| group_id | 4 | AlmaLinux | OS_ID | 7 | AlmaLinux 8 Minimal |
+| group_id | 4 | AlmaLinux | OS_ID | 8 | AlmaLinux 9 Latest |
+| group_id | 6 | Alpine Linux | OS_ID | 9 | Alpine Linux 3.19 |
 
 ### alice API
 
