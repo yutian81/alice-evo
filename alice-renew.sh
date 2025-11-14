@@ -85,7 +85,7 @@ escape_html() {
 # 获取指定名称的 SSH Key ID
 get_ssh_key_id() {
     local key_name="$1"
-    echo "▶️ 正在尝试获取 SSH Key ID (名称: **$key_name**)..." >&2
+    echo "▶️ 正在尝试获取 SSH Key ID (名称: $key_name)..." >&2
     
     SSH_KEY_RESPONSE=$(curl -L -s -X GET "$API_SSH_KEY_URL" -H "Authorization: Bearer $AUTH_TOKEN")
     API_STATUS=$(echo "$SSH_KEY_RESPONSE" | jq -r '.status // empty')
@@ -99,12 +99,12 @@ get_ssh_key_id() {
         jq -r --arg name "$key_name" '.data[] | select(.name == $name) | .id // empty')
 
     if [ -z "$key_id" ]; then
-        echo "❌ 错误：未找到名称为 '**$key_name**' 的 SSH Key ID。" >&2
+        echo "❌ 错误：未找到名称为 $key_name 的 SSH Key ID。" >&2
         echo "请注意：如果您希望使用的公钥尚未在 Alice 后台添加，请手动添加。" >&2
         return 2
     fi
     
-    echo "✅ 成功获取 SSH Key ID: **$key_id**" >&2
+    echo "✅ 成功获取 SSH Key ID: $key_id" >&2
     echo "$key_id"
     return 0
 }
@@ -224,7 +224,7 @@ deploy_instance() {
         DETAILS_TEXT="
 实例 ID: $NEW_ID
 部署方案: $NEW_PLAN
-硬件配置: CPU: $NEW_CPU G | 内存: $NEW_MEM M | 磁盘: $NEW_DISK G
+硬件配置: CPU: $NEW_CPU G, 内存: $NEW_MEM M, 磁盘: $NEW_DISK G
 操作系统: $NEW_OS
 区域: $NEW_REGION
 状态: $NEW_STATUS
@@ -235,7 +235,7 @@ IPv4 地址: <code>${NEW_IP}</code>
 IPv6 地址: <code>${NEW_IPV6}</code>
 主机名: <code>${NEW_HOST}</code>
 用户名: <code>${NEW_USER}</code>
-密码: <code>${NEW_PASS:}</code>
+密码: <code>${NEW_PASS}</code>
 "
 
         # 构造 Telegram 成功消息
@@ -268,13 +268,14 @@ EOF
 错误状态: ${API_STATUS}
 错误消息: ${MESSAGE}
 ========================
-请检查账户余额或 API 配置。
+请检查账户权限或 API 配置。
 EOF
         )
         # TG_FAIL_MSG=$(escape_html "$TG_FAIL_MSG")
         send_tg_notification "$TG_FAIL_MSG"
 
-        echo "状态: ❌ 创建失败 (API 错误 - Status: $API_STATUS)" >&2
+        echo "状态: ❌ 创建失败" >&2
+        echo "API 状态: $API_STATUS" >&2
         echo "错误信息: $MESSAGE" >&2
         echo "$RESPONSE" | jq . >&2
         return 1
@@ -286,8 +287,8 @@ ssh_and_run_script() {
     local instance_ip="$1"
     local instance_user="$2"
     local max_retries=5
-    local wait_time=15
-    local run_time=30
+    local wait_time=10
+    # local run_time=30
     local config_succeeded=1
 
     echo -e "\n⚙️ 正在通过 SSH 登录并执行脚本..." >&2
@@ -300,10 +301,9 @@ ssh_and_run_script() {
         
         # SSH 选项说明:
         # -o StrictHostKeyChecking=no: 避免首次连接的密钥确认提示
-        # -o ConnectTimeout=10: 连接超时时间
-        # -T: 禁止伪终端分配，适合远程执行脚本
-        
-        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -T "${instance_user}@${instance_ip}" "bash -s" <<< "$NODEJS_COMMAND" ; then
+        # -o ConnectTimeout=15: 连接超时时间
+        # -T: 禁止伪终端分配，适合远程执行脚本    
+        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -T "${instance_user}@${instance_ip}" "bash -s" <<< "$NODEJS_COMMAND" ; then
             echo "✅ 远程脚本启动成功！" >&2
             config_succeeded=0
             break
@@ -351,7 +351,7 @@ main() {
                 DESTROY_FAIL=$((DESTROY_FAIL + 1))
             fi
         done
-        echo "总结: 成功销毁 ${DESTROY_COUNT} 个，失败 ${DESTROY_FAIL} 个。"
+        echo "✅ 成功销毁 ${DESTROY_COUNT} 个，失败 ${DESTROY_FAIL} 个。"
     elif [ "$GET_ID_STATUS" -eq 2 ]; then
         echo "⚠️ 未发现任何实例，跳过销毁阶段。"
     else
@@ -368,7 +368,7 @@ main() {
     DEPLOY_STATUS=$?
 
     if [ "$DEPLOY_STATUS" -ne 0 ]; then
-        echo -e "\n❌ 流程失败：新实例部署失败，请检查账户余额和配置。"
+        echo -e "\n❌ 流程失败：新实例部署失败，请检查账户权限和配置。"
         exit 1
     fi
 
@@ -394,7 +394,7 @@ main() {
     local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
         echo -e "\n🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功完成！"
-        echo -e "🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取完整节点内容"
+        echo -e "🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取节点内容"
         echo -e "🎉 SSH连接信息：IP: ${TARGET_IP}, 端口: 22, 用户名: ${NEW_USER}, 密码: ${NEW_PASS}"
     else
         echo -e "\n❌ 流程失败：远程配置脚本执行失败。实例 ${NEW_ID} 已创建，请登录 ssh 检查。"
