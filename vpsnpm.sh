@@ -4,6 +4,7 @@
 SERVICE_NAME="nodejs-argo"
 SERVICE_DIR="/opt/${SERVICE_NAME}"
 SCRIPT_PATH="${SERVICE_DIR}/vpsnpm.sh"
+SUB_FILE="${SERVICE_DIR}/tmp/sub.txt"
 SCRIPT_SOURCE_PATH=$(readlink -f "$0")
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 OPENRC_SERVICE_FILE="/etc/init.d/${SERVICE_NAME}"
@@ -181,19 +182,35 @@ EOF
     fi
 }
 
-# 核心进程执行
-#start_core_process() {
-#    echo "--- 正在启动核心服务 (npx ${TARGET_MODULE}) ---"
-#    npx "${TARGET_MODULE}"
-#}
-
 # 主执行逻辑
 if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     setup_environment # 设置环境和权限
     install_node # 安装 Node.js
     install_deps # 安装依赖
     create_service # 创建/重启服务
-    # start_core_process # 运行npx核心进程
+    
+    echo "--- 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2
+    MAX_WAIT=30
+    WAIT_INTERVAL=3
+    
+    for ((i=0; i < MAX_WAIT; i+=WAIT_INTERVAL)); do
+        if [ -f "${SUB_FILE}" ]; then
+            echo "✅ 节点信息文件已找到！" >&2
+            break
+        fi
+        echo "等待 ${WAIT_INTERVAL} 秒... (${i}/${MAX_WAIT} 秒)" >&2
+        sleep ${WAIT_INTERVAL}
+    done
+
+    echo -e "\n----- 🚀 节点信息 (Base64) -----"
+    if [ -f "${SUB_FILE}" ]; then
+        cat "${SUB_FILE}"
+        echo -e "-----------------------------\n"
+    else
+        echo "❌ 警告：未在预期时间内找到节点信息文件 ${SUB_FILE}。"
+        echo "⚠️ 请稍后手动通过 SSH 连接检查：cat ${SUB_FILE}"
+    fi
+    
     exit 0 # 安装模式结束，退出。
 fi
 
