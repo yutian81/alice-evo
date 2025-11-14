@@ -27,7 +27,7 @@ API_SSH_KEY_URL="${API_BASE_URL}/User/SSHKey"
 # Telegram 通知配置 (需要从 GitHub action secrets 传入)
 TG_BOT_TOKEN="${TG_BOT_TOKEN}"
 TG_CHAT_ID="${TG_CHAT_ID}"
-TG_API_BASE="${TG_API_BASE:-https://api.telegram.org}" # 默认使用官方 API
+TG_API_BASE="https://api.telegram.org"
 
 # --- 2. 辅助函数 ---
 
@@ -52,7 +52,7 @@ check_jq() {
 # Telegram 通知函数
 send_tg_notification() {
     if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
-        echo "⚠️ 跳过 Telegram 通知 (缺少配置)。" >&2
+        echo "⚠️ 跳过 Telegram 通知 (未配置 TG_BOT_TOKEN 或 TG_CHAT_ID)。" >&2
         return
     fi
     
@@ -60,17 +60,16 @@ send_tg_notification() {
     local URL="${TG_API_BASE}/bot${TG_BOT_TOKEN}/sendMessage"
     
     echo "▶️ 正在发送 Telegram 通知..." >&2
-
-    # 使用 curl 发送 POST 请求
-    curl -s -X POST "$URL" \
+    if curl -s -f -X POST "$URL" \
+        -H "Content-Type: application/x-www-form-urlencoded" \
         -d "chat_id=${TG_CHAT_ID}" \
         -d "text=${message}" \
-        -d "parse_mode=HTML" > /dev/null
-    
-    if [ $? -eq 0 ]; then
+        -d "parse_mode=HTML" > /dev/null; then
         echo "✅ Telegram 通知发送成功。" >&2
+        return 0
     else
         echo "❌ Telegram 通知发送失败。" >&2
+        return 1
     fi
 }
 
