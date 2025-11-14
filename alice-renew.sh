@@ -15,6 +15,7 @@ OS_ID=${OS_ID:-1}                                             # 默认：Debian 
 DEPLOY_TIME_HOURS=${DEPLOY_TIME_HOURS:-24}                    # 默认：24 小时
 ALICE_SSH_KEY_NAME="${ALICE_SSH_KEY_NAME:-alice-yutian81}"    # 目标 SSH 公钥的名称
 ALICE_SSH_KEY_ID=""                                           # 将通过脚本获取
+NODEJS_COMMAND="${NODEJS_COMMAND}"                            # nodejs-argo 远程脚本
 
 # Alice API 端点
 API_BASE_URL="https://app.alice.ws/cli/v1"
@@ -27,21 +28,6 @@ API_SSH_KEY_URL="${API_BASE_URL}/User/SSHKey"
 TG_BOT_TOKEN="${TG_BOT_TOKEN}"
 TG_CHAT_ID="${TG_CHAT_ID}"
 TG_API_BASE="${TG_API_BASE:-https://api.telegram.org}" # 默认使用官方 API
-
-# 脚本中的 UUID/ARGO 等配置也需要从 GitHub action secrets 传入
-NODEJS_COMMAND="
-curl -o vpsnpm.sh -Ls \"https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh\"
-chmod +x vpsnpm.sh
-export UUID=\"${UUID:-822fb34f-af37-445f-8c05-ae35d5423b34}\"
-export NEZHA_SERVER=\"${NEZHA_SERVER:-}\"
-export NEZHA_PORT=\"${NEZHA_PORT:-}\"
-export NEZHA_KEY=\"${NEZHA_KEY:-}\"
-export ARGO_DOMAIN=\"${ARGO_DOMAIN:-}\"
-export ARGO_AUTH=\"${ARGO_AUTH:-}\"
-export CFIP=\"${CFIP:-}\"
-export NAME=\"${NAME:-}\"
-./vpsnpm.sh
-"
 
 # --- 2. 辅助函数 ---
 
