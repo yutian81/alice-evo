@@ -300,7 +300,7 @@ ssh_and_run_script() {
     local instance_ip="$1"
     local instance_user="$2"
     local max_retries=5
-    local wait_time=20
+    local wait_time=15
     local run_time=30
     local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     local config_succeeded=1
