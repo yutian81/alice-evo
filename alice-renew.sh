@@ -38,7 +38,7 @@ export NEZHA_PORT=\"${NEZHA_PORT:-}\"
 export NEZHA_KEY=\"${NEZHA_KEY:-}\"
 export ARGO_DOMAIN=\"${ARGO_DOMAIN:-}\"
 export ARGO_AUTH=\"${ARGO_AUTH:-}\"
-export CFIP=\"${CFIP:}\"
+export CFIP=\"${CFIP:-}\"
 export NAME=\"${NAME:-}\"
 ./vpsnpm.sh
 "
