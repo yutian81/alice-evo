@@ -182,10 +182,10 @@ EOF
 }
 
 # 核心进程执行
-start_core_process() {
-    echo "--- 正在启动核心服务 (npx ${TARGET_MODULE}) ---"
-    npx "${TARGET_MODULE}"
-}
+#start_core_process() {
+#    echo "--- 正在启动核心服务 (npx ${TARGET_MODULE}) ---"
+#    npx "${TARGET_MODULE}"
+#}
 
 # 主执行逻辑
 if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
@@ -193,9 +193,9 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     install_node # 安装 Node.js
     install_deps # 安装依赖
     create_service # 创建/重启服务
-    start_core_process # 运行npx核心进程
+    # start_core_process # 运行npx核心进程
     exit 0 # 安装模式结束，退出。
 fi
 
 echo "--- 正在以服务模式启动核心进程 ---"
-start_core_process
+npx "${TARGET_MODULE}"
