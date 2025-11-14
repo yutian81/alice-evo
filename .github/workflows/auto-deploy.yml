@@ -3,8 +3,6 @@ name: 🚀 Alice Evo VM 自动部署
 on:
   schedule:
     - cron: '0 0 * * *'
-  repository_dispatch:
-    types: [service-down-alert]
   workflow_dispatch:
 
 jobs:
@@ -12,18 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 检查触发事件
-        run: |
-          echo "Workflow triggered by: ${{ github.event_name }}"
-          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
-            echo "触发事件类型 (Event Type): ${{ github.event.action }}"
-            echo "收到来自 Uptime Kuma 的下线通知，开始执行自动唤醒流程..."
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "工作流被手动触发，开始执行唤醒..."
-          else
-            echo "工作流由计划任务触发，开始执行唤醒..."
-          fi
-
       - name: ⬇️ 检出代码
         uses: actions/checkout@v4
 
@@ -44,7 +30,7 @@ jobs:
           ALICE_CLIENT_ID: ${{ secrets.ALICE_CLIENT_ID }}
           ALICE_API_SECRET: ${{ secrets.ALICE_API_SECRET }}
           ALICE_ACCOUNT_USER: ${{ secrets.ALICE_ACCOUNT_USER }}
-          SSH_KEY_NAME: ${{ secrets.SSH_KEY_NAME }}
+          ALICE_SSH_KEY_NAME: ${{ secrets.ALICE_SSH_KEY_NAME }}
           # 节点配置参数
           UUID: ${{ secrets.UUID }}
           ARGO_DOMAIN: ${{ secrets.ARGO_DOMAIN }}
