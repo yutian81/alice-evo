@@ -53,6 +53,9 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 | group_id | 6 | Alpine Linux | OD_ID | 9 | Alpine Linux 3.19 |
 
 ### alice API
+
+- **官方文档**：https://api.aliceinit.io/
+
 - 基础地址 **API_BASE_URL**
 ```
 https://app.alice.ws/cli/v1
