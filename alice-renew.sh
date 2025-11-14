@@ -153,7 +153,8 @@ destroy_instance() {
         echo "消息: $MESSAGE" >&2
         return 0
     else
-        echo "状态: ❌ 销毁失败 (API 错误 - Status: $API_STATUS)" >&2
+        echo "状态: ❌ 销毁失败" >&2
+        echo "API 状态: $API_STATUS)" >&2
         echo "错误信息: $MESSAGE" >&2
         echo "$RESPONSE" | jq . >&2
         return 1
@@ -179,7 +180,7 @@ deploy_instance() {
 
     if [ "$CURL_STATUS" -ne 0 ]; then
         echo "❌ 实例创建失败 (cURL 连接错误: $CURL_STATUS)" >&2
-        return 1
+        exit 1  # 终止脚本
     fi
 
     API_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
@@ -209,15 +210,10 @@ deploy_instance() {
             timestamp1=$(date +%s -d "$NEW_CREAT")
             timestamp2=$(date +%s -d "$NEW_EXPIR")
             time_diff_seconds=$((timestamp2 - timestamp1))
-
-            if [ "$time_diff_seconds" -gt 0 ]; then
-                time_diff_minutes=$((time_diff_seconds / 60))
-                remaining_hours=$((time_diff_minutes / 60))
-                remaining_minutes=$((time_diff_minutes % 60))
-                REMAINING="${remaining_hours} 小时 ${remaining_minutes} 分钟"
-            else
-                REMAINING="已过期"
-            fi
+            time_diff_minutes=$((time_diff_seconds / 60))
+            remaining_hours=$((time_diff_minutes / 60))
+            remaining_minutes=$((time_diff_minutes % 60))
+            REMAINING="${remaining_hours} 小时 ${remaining_minutes} 分钟"
         fi
 
         # 构造新实例详细信息 (用于日志和 TG)
@@ -278,7 +274,7 @@ EOF
         echo "API 状态: $API_STATUS" >&2
         echo "错误信息: $MESSAGE" >&2
         echo "$RESPONSE" | jq . >&2
-        return 1
+        exit 1  # 终止脚本
     fi
 }
 
