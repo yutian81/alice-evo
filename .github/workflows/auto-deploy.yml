@@ -1,0 +1,49 @@
+name: 🚀 Alice Evo VM 自动部署
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🛠️ 安装依赖 (jq, ssh)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq ssh
+
+      - name: 🔑 注入 SSH 私钥到 Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.ALICE_SSH_KEY }}
+
+      - name: 🚀 执行 Alice Evo 自动化部署脚本
+        id: deploy
+        env:
+          # Alice Evo 认证信息
+          ALICE_CLIENT_ID: ${{ secrets.ALICE_CLIENT_ID }}
+          ALICE_API_SECRET: ${{ secrets.ALICE_API_SECRET }}
+          ALICE_ACCOUNT_USER: ${{ secrets.ALICE_ACCOUNT_USER }}
+          SSH_KEY_NAME: ${{ secrets.SSH_KEY_NAME }}
+          # 节点配置参数
+          UUID: ${{ secrets.UUID }}
+          ARGO_DOMAIN: ${{ secrets.ARGO_DOMAIN }}
+          ARGO_AUTH: ${{ secrets.ARGO_AUTH }}
+          NEZHA_SERVER: ${{ secrets.NEZHA_SERVER }}
+          NEZHA_PORT: ${{ secrets.NEZHA_PORT }}
+          NEZHA_KEY: ${{ secrets.NEZHA_KEY }}
+          CFIP: ${{ secrets.CFIP }}
+          NAME: ${{ secrets.NAME }}
+          # TG通知参数
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          chmod +x alice-renew.sh
+          ./alice-renew.sh
