@@ -38,7 +38,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 ### 实例参数配置
 - PRODUCT_ID：部署方案ID，可选 38 | 39 | 40 | 41
 - OS_ID：部署系统ID，可选 1-10
-- DEPLOY_TIME_HOURS：部署系统时长，可选1-24，单位：小时
+- DEPLOY_TIME_HOURS：VPS存活时长，可选1-24，单位：小时
 
 - PRODUCT_ID 明细
 
@@ -68,7 +68,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 
 - **官方文档**：https://api.aliceinit.io/
 
-- 基础地址 **API_BASE_URL**
+- **基础地址 API_BASE_URL**
 ```
 https://app.alice.ws/cli/v1
 ```
