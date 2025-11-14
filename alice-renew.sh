@@ -79,13 +79,22 @@ send_tg_notification() {
     curl -s -X POST "$URL" \
         -d "chat_id=${TG_CHAT_ID}" \
         -d "text=${message}" \
-        -d "parse_mode=MarkdownV2" > /dev/null
+        -d "parse_mode=HTML" > /dev/null
     
     if [ $? -eq 0 ]; then
         echo "✅ Telegram 通知发送成功。" >&2
     else
         echo "❌ Telegram 通知发送失败。" >&2
     fi
+}
+
+# HTML 转义
+escape_html() {
+    local text="$1"
+    text=$(echo "$text" | sed -e 's/&/&amp;/g' \
+                             -e 's/</&lt;/g' \
+                             -e 's/>/&gt;/g')
+    echo "$text"
 }
 
 # 获取指定名称的 SSH Key ID
@@ -237,45 +246,46 @@ deploy_instance() {
 创建时间: $NEW_CREAT
 过期时间: $NEW_EXPIR
 剩余时间: $REMAINING
-IPv4 地址: \`${NEW_IP}\`
-IPv6 地址: \`${NEW_IPV6}\`
-主机名: \`${NEW_HOST}\`
-用户名: \`${NEW_USER}\`
-密码: \`${NEW_PASS:-(使用SSH Key)}\`
+IPv4 地址: <code>${NEW_IP}</code>
+IPv6 地址: <code>${NEW_IPV6}</code>
+主机名: <code>${NEW_HOST}</code>
+用户名: <code>${NEW_USER}</code>
+密码: <code>${NEW_PASS:-(使用SSH Key)}</code>
 "
 
         # 构造 Telegram 成功消息
         TG_SUCCESS_MSG=$(cat <<EOF
-*🎉 Alice Evo 部署成功！*
+<b>🎉 Alice Evo 部署成功！</b>
 ========================
 ${DETAILS_TEXT}
 ========================
 EOF
         )
-        TG_SUCCESS_MSG=$(echo "$TG_SUCCESS_MSG" | sed 's/\./\\./g; s/-/\\-/g; s/!/\\!/g; s/(/\\(/g; s/)/\\)/g')
+        TG_SUCCESS_MSG=$(escape_html "$TG_SUCCESS_MSG")
         send_tg_notification "$TG_SUCCESS_MSG"
 
         # 打印到 stderr
         echo "状态: ✅ 创建成功" >&2
         echo "----- 新实例详情 -----" >&2
-        echo "$DETAILS_TEXT" | sed 's/\\`/`/g' >&2
+        echo "$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g' >&2
         echo "--------------------" >&2
         
         # 返回新实例 ID IP USER以供后续使用
         echo "$NEW_ID $NEW_IP $NEW_USER"
         return 0
+
     else
         # 构造 Telegram 部署失败消息
         TG_FAIL_MSG=$(cat <<EOF
-*❌ Alice Evo 部署失败！*
+<b>❌ Alice Evo 部署失败！</b>
 ========================
-*错误状态:* ${API_STATUS}
-*错误消息:* ${MESSAGE}
+错误状态: ${API_STATUS}
+错误消息: ${MESSAGE}
 ========================
 请检查账户余额或 API 配置。
 EOF
         )
-        TG_FAIL_MSG=$(echo "$TG_FAIL_MSG" | sed 's/\./\\./g; s/-/\\-/g; s/!/\\!/g')
+        TG_FAIL_MSG=$(escape_html "$TG_FAIL_MSG")
         send_tg_notification "$TG_FAIL_MSG"
 
         echo "状态: ❌ 创建失败 (API 错误 - Status: $API_STATUS)" >&2
