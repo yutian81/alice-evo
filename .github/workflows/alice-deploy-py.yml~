@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: "3.x"  
 
-      - name: 🛠️ 安装依赖 (jq, ssh)
+      - name: 🛠️ 安装依赖
         run: |
           pip install requests
 
