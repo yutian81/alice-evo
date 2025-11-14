@@ -253,7 +253,8 @@ EOF
         # 打印到 stderr
         echo "状态: ✅ 创建成功" >&2
         echo "----- 新实例详情 -----" >&2
-        echo "$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g' >&2
+        echo "$DETAILS_TEXT"
+        # echo "$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g' >&2
         echo "--------------------" >&2
         
         # 返回新实例 ID IP USER PASS 以供后续使用
@@ -395,7 +396,7 @@ main() {
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
         echo -e "\n🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功完成！"
         echo -e "\n🎉 由于Github action的限制，日志中输出的节点内容与 secret 相关的信息会被隐藏"
-        echo -e "\n🎉 需要手动连接SSH，并执行 cat "${remote_file}" 命令获取完整节点内容"
+        echo -e "\n🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取完整节点内容"
         echo -e "\n🎉 SSH连接信息：IP: ${TARGET_IP}, 端口: 22, 用户名: ${NEW_USER}, 密码: ${NEW_PASS}"
     else
         echo -e "\n❌ 流程失败：远程配置脚本执行失败。实例 ${NEW_ID} 已创建，请手动使用 IP ${NEW_IP} 检查。"
