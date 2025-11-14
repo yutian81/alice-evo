@@ -32,14 +32,14 @@ TG_API_BASE="${TG_API_BASE:-https://api.telegram.org}" # 默认使用官方 API
 NODEJS_COMMAND="
 curl -o vpsnpm.sh -Ls \"https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh\"
 chmod +x vpsnpm.sh
-UUID=\"${UUID:-822fb34f-af37-445f-8c05-ae35d5423b34}\"
-NEZHA_SERVER=\"${NEZHA_SERVER:-}\"
-NEZHA_PORT=\"${NEZHA_PORT:-}\"
-NEZHA_KEY=\"${NEZHA_KEY:-}\"
-ARGO_DOMAIN=\"${ARGO_DOMAIN:-}\"
-ARGO_AUTH=\"${ARGO_AUTH:-}\"
-CFIP=\"${CFIP:-cf.090227.xyz}\"
-NAME=\"${NAME:-ALICE}\"
+export UUID=\"${UUID:-822fb34f-af37-445f-8c05-ae35d5423b34}\"
+export NEZHA_SERVER=\"${NEZHA_SERVER:-}\"
+export NEZHA_PORT=\"${NEZHA_PORT:-}\"
+export NEZHA_KEY=\"${NEZHA_KEY:-}\"
+export ARGO_DOMAIN=\"${ARGO_DOMAIN:-}\"
+export ARGO_AUTH=\"${ARGO_AUTH:-}\"
+export CFIP=\"${CFIP:-cf.090227.xyz}\"
+export NAME=\"${NAME:-ALICE}\"
 ./vpsnpm.sh
 "
 
@@ -168,7 +168,7 @@ destroy_instance() {
 
 # 创建实例（默认时长24小时）
 deploy_instance() {
-    echo -e "\n🚀 正在部署新实例 (Plan ID: ${PRODUCT_ID}, OS ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h..." >&2
+    echo -e "\n🚀 正在部署新实例 (Plan ID: ${PRODUCT_ID}, OS ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h...)" >&2
     
     CURL_CMD="curl -L -s -X POST \"$API_DEPLOY_URL\" \
         -H \"Authorization: Bearer $AUTH_TOKEN\" \
@@ -291,7 +291,7 @@ ssh_and_run_script() {
     local instance_user="$2"
     local max_retries=5
     local wait_time=20
-    local run_time=300
+    local run_time=30
     local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     local config_succeeded=1
 
@@ -320,27 +320,6 @@ ssh_and_run_script() {
     
     if [ "$config_succeeded" -ne 0 ]; then
         echo "❌ 致命错误：SSH 连接或脚本启动在 ${max_retries} 次尝试后失败。" >&2
-        return 1
-    fi
-    
-    # 等待远程脚本执行完毕 (5分钟)
-    echo -e "\n⚙️ 远程脚本已启动，等待 ${run_time} 秒以完成配置..." >&2
-    sleep "$run_time"
-    echo -e "\n⚙️ 尝试通过 SSH 读取结果文件 ${remote_file}..." >&2
-
-    RESULT=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -T "${instance_user}@${instance_ip}" "cat ${remote_file} 2>/dev/null")
-    SSH_EXIT_CODE=$?
-
-    if [ "$SSH_EXIT_CODE" -eq 0 ] && [ -n "$RESULT" ]; then
-        echo -e "--- Alice nodejs-argo 节点信息 ---"
-        echo "$RESULT" 
-        echo -e "----------------------------------"
-        echo -e "\n✅ 远程脚本执行完毕，请保存以上 base64 编码的节点信息！" >&2
-        return 0
-    else
-        echo -e "\n⚠️ 脚本尚未执行完成，或结果文件未找到！" >&2
-        echo "远程执行 cat ${remote_file} 失败 (Exit Code: $SSH_EXIT_CODE)。" >&2
-        echo "稍后请手动连接 ssh, 并执行命令: cat ${remote_file}" >&2
         return 1
     fi
 }
