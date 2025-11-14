@@ -270,8 +270,8 @@ EOF
         echo "$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g' >&2
         echo "--------------------" >&2
         
-        # 返回新实例 ID IP USER以供后续使用
-        echo "$NEW_ID $NEW_IP $NEW_USER"
+        # 返回新实例 ID IP USER PASS 以供后续使用
+        echo "$NEW_ID $NEW_IP $NEW_USER $NEW_PASS"
         return 0
 
     else
@@ -302,7 +302,6 @@ ssh_and_run_script() {
     local max_retries=5
     local wait_time=15
     local run_time=30
-    local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     local config_succeeded=1
 
     echo -e "\n⚙️ 正在通过 SSH 登录并执行脚本..." >&2
@@ -378,7 +377,7 @@ main() {
     echo "🚀 阶段二：部署新实例"
     echo "=========================================="
 
-    # 捕获 ID, IP, USER
+    # 捕获 ID, IP, USER, PASS
     NEW_INSTANCE_INFO=$(deploy_instance)
     DEPLOY_STATUS=$?
 
@@ -388,7 +387,7 @@ main() {
     fi
 
     # 解析 deploy_instance 的返回值
-    read -r NEW_ID NEW_IP NEW_USER <<< "$NEW_INSTANCE_INFO"
+    read -r NEW_ID NEW_IP NEW_USER NEW_PASS<<< "$NEW_INSTANCE_INFO"
     
     # 确定最终的 SSH 连接目标：优先使用 API 返回的 IP，否则使用预设 Hostname
     TARGET_IP=""
@@ -406,8 +405,12 @@ main() {
     echo "⚙️ 阶段三：通过 SSH 执行远程配置"
     echo "=========================================="
 
+    local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
-        echo -e "\n🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功完成。"
+        echo -e "\n🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功完成！"
+        echo -e "\n🎉 由于Github action的限制，日志中输出的节点内容与 secret 相关的信息会被隐藏"
+        echo -e "\n🎉 需要手动连接SSH，并执行 cat "${remote_file}" 命令获取完整节点内容"
+        echo -e "\n🎉 SSH连接信息：IP: ${TARGET_IP}, 端口: 22, 用户名: ${NEW_USER}, 密码: ${NEW_PASS}"
     else
         echo -e "\n❌ 流程失败：远程配置脚本执行失败。实例 ${NEW_ID} 已创建，请手动使用 IP ${NEW_IP} 检查。"
         exit 1
