@@ -28,7 +28,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - **ALICE_API_SECRET**
 - **ALICE_SSH_KEY_NAME**：公钥名称
 - **ALICE_SSH_KEY**：私钥内容
-- **NODEJS_COMMAND**: nodejs-argo远程脚本，必须包含 `ARGO_DOMAIN` 和 `ARGO_AUTH` 两个外置变量，内容为上述 `全自动安装代码`
+- **NODEJS_COMMAND**: nodejs-argo远程脚本，必须包含 `ARGO_DOMAIN` 和 `ARGO_AUTH` 两个外置变量，以确保节点保活，内容为上述 `全自动安装代码`
 
 ### 可选变量
 - ALICE_ACCOUNT_USER：alice账号用户名
