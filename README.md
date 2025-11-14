@@ -33,7 +33,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 
 ### 可选变量
 - ALICE_ACCOUNT_USER：账号用户名
-- UUID：哪吒需要, 在 alice-renew.sh 中修改，否则 action 终端输出的节点信息不全
+- UUID：哪吒需要
 - NEZHA_SERVER：哪吒需要
 - NEZHA_PORT：哪吒v0需要
 - NEZHA_KEY：哪吒需要
