@@ -47,6 +47,8 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - OS_ID：部署系统ID，可选 1-10
 - DEPLOY_TIME_HOURS：部署系统时长，可选1-24，单位：小时
 
+- PRODUCT_ID 明细
+
 | 参数   | ID值   | 名称    | 注释    |
 | ------ | ----- | ------ |-------- |
 | PRODUCT_ID | 38 | SLC.Evo.Micro 入门版 | 2c-4g-60g |
@@ -54,7 +56,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 | PRODUCT_ID | 40 | SLC.Evo.Pro 专业版 | 8c-16g-200g |
 | PRODUCT_ID | 41 | SLC.Evo.Pro 专业版 | 16c-32g-300g |
 
-- **EVO 实例可选系统**
+- OS_ID 明细
 
 | 参数   | ID值   | 系统   | 版本参数   | ID值   | 版本号 |
 | ------ | ----- | ------ |-----------|---------|------|
