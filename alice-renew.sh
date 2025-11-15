@@ -33,18 +33,18 @@ TG_API_BASE="https://api.telegram.org"
 
 check_config() {
     if [ -z "$ALICE_CLIENT_ID" ] || [ -z "$ALICE_API_SECRET" ]; then
-        echo "❌ 错误：ALICE_CLIENT_ID 或 ALICE_API_SECRET 变量未设置。" >&2
+        echo "❌ 错误：ALICE_CLIENT_ID 或 ALICE_API_SECRET 变量未设置" >&2
         exit 1
     fi
     if [ -z "$ALICE_SSH_KEY_NAME" ]; then
-        echo "❌ 错误：ALICE_SSH_KEY_NAME 未设置，无法自动获取 SSH Key ID。" >&2
+        echo "❌ 错误：ALICE_SSH_KEY_NAME 未设置，无法自动获取 SSH Key ID" >&2
         exit 1
     fi
 }
 
 check_jq() {
     if ! command -v jq &> /dev/null; then
-        echo "❌ 错误：未找到 'jq' 命令。脚本无法继续执行。" >&2
+        echo "❌ 错误：未找到 'jq' 命令。脚本无法继续执行" >&2
         exit 1
     fi
 }
@@ -52,7 +52,7 @@ check_jq() {
 # Telegram 通知函数
 send_tg_notification() {
     if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
-        echo "⚠️ 跳过 Telegram 通知 (未配置 TG_BOT_TOKEN 或 TG_CHAT_ID)。" >&2
+        echo "⚠️ 跳过 Telegram 通知 (未配置 TG_BOT_TOKEN 或 TG_CHAT_ID)" >&2
         return
     fi
     
@@ -65,10 +65,10 @@ send_tg_notification() {
         -d "chat_id=${TG_CHAT_ID}" \
         -d "text=${message}" \
         -d "parse_mode=HTML" > /dev/null; then
-        echo "✅ Telegram 通知发送成功。" >&2
+        echo "✅ Telegram 通知发送成功" >&2
         return 0
     else
-        echo "❌ Telegram 通知发送失败。" >&2
+        echo "❌ Telegram 通知发送失败" >&2
         return 1
     fi
 }
@@ -85,13 +85,13 @@ escape_html() {
 # 获取指定名称的 SSH Key ID
 get_ssh_key_id() {
     local key_name="$1"
-    echo "▶️ 正在尝试获取 SSH Key ID (名称: $key_name)..." >&2
+    echo "▶️ 正在尝试获取 SSH Key ID (Key名称: $key_name)..." >&2
     
     SSH_KEY_RESPONSE=$(curl -L -s -X GET "$API_SSH_KEY_URL" -H "Authorization: Bearer $AUTH_TOKEN")
     API_STATUS=$(echo "$SSH_KEY_RESPONSE" | jq -r '.status // empty')
 
     if [ "$API_STATUS" != "200" ]; then
-        echo "❌ 获取 SSH Key 列表失败 (API 错误 - Status: $API_STATUS)" >&2
+        echo "❌ 获取 SSH Key 列表失败 (API状态: $API_STATUS)" >&2
         return 1
     fi
 
@@ -99,8 +99,8 @@ get_ssh_key_id() {
         jq -r --arg name "$key_name" '.data[] | select(.name == $name) | .id // empty')
 
     if [ -z "$key_id" ]; then
-        echo "❌ 错误：未找到名称为 $key_name 的 SSH Key ID。" >&2
-        echo "请注意：如果您希望使用的公钥尚未在 Alice 后台添加，请手动添加。" >&2
+        echo "❌ 错误：未找到名称为 $key_name 的 SSH Key ID" >&2
+        echo "⚠️ 注意：如果您希望使用的公钥尚未在 Alice 后台添加，请手动添加" >&2
         return 2
     fi
     
@@ -111,21 +111,21 @@ get_ssh_key_id() {
 
 # 获取实例列表
 get_instance_ids() {
-    echo "▶️ 正在尝试从 Alice API 获取实例列表..." >&2
+    echo "▶️ 正在尝试从获取实例列表..." >&2
     LIST_RESPONSE=$(curl -L -s -X GET "$API_LIST_URL" -H "Authorization: Bearer $AUTH_TOKEN")
     API_STATUS=$(echo "$LIST_RESPONSE" | jq -r '.status // empty')
     
     if [ "$API_STATUS" != "200" ]; then
-        echo "❌ 获取实例列表失败 (API 错误 - Status: $API_STATUS)" >&2
+        echo "❌ 获取实例列表失败 (API状态: $API_STATUS)" >&2
         return 1
     fi
     INSTANCE_IDS=$(echo "$LIST_RESPONSE" | jq -r '.data[].id // empty' | tr '\n' ' ')
     
     if [ -z "$INSTANCE_IDS" ]; then
-        echo "⚠️ 实例列表为空或未找到有效 ID。" >&2
+        echo "⚠️ 实例列表为空或未找到有效ID" >&2
         return 2
     fi
-    echo "✅ 成功获取到以下实例 ID：" $INSTANCE_IDS >&2
+    echo "✅ 成功获取到以下实例, ID：$INSTANCE_IDS" >&2
     echo "$INSTANCE_IDS"
     return 0
 }
@@ -133,7 +133,7 @@ get_instance_ids() {
 # 销毁实例
 destroy_instance() {
     local instance_id="$1"
-    echo -e "\n🔥 正在销毁实例 ID: ${instance_id}..." >&2
+    echo -e "\n🔥 正在销毁实例, ID: ${instance_id}..." >&2
     
     RESPONSE=$(curl -L -s -X POST "$API_DESTROY_URL" \
         -H "Authorization: Bearer $AUTH_TOKEN" \
@@ -154,7 +154,7 @@ destroy_instance() {
         return 0
     else
         echo "状态: ❌ 销毁失败" >&2
-        echo "API 状态: $API_STATUS)" >&2
+        echo "API状态: $API_STATUS)" >&2
         echo "错误信息: $MESSAGE" >&2
         echo "$RESPONSE" | jq . >&2
         return 1
@@ -180,7 +180,7 @@ deploy_instance() {
 
     if [ "$CURL_STATUS" -ne 0 ]; then
         echo "❌ 实例创建失败 (cURL 连接错误: $CURL_STATUS)" >&2
-        exit 1  # 终止脚本
+        exit 1
     fi
 
     API_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
@@ -242,13 +242,13 @@ ${DETAILS_TEXT}
 ========================
 EOF
         )
-        # TG_SUCCESS_MSG=$(escape_html "$TG_SUCCESS_MSG")
         send_tg_notification "$TG_SUCCESS_MSG"
-
+        DETAILS_TEXT_LOG=$(escape_html "$DETAILS_TEXT")
+        
         # 打印到 stderr
         echo "状态: ✅ 创建成功" >&2
         echo "----- 新实例详情 -----" >&2
-        echo "$DETAILS_TEXT"
+        echo "$DETAILS_TEXT_LOG"
         # echo "$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g' >&2
         echo "--------------------" >&2
         
@@ -261,7 +261,7 @@ EOF
         TG_FAIL_MSG=$(cat <<EOF
 <b>❌ Alice Evo 部署失败！</b>
 ========================
-错误状态: ${API_STATUS}
+API状态: ${API_STATUS}
 错误消息: ${MESSAGE}
 ========================
 请检查账户权限或 API 配置。
@@ -271,7 +271,7 @@ EOF
         send_tg_notification "$TG_FAIL_MSG"
 
         echo "状态: ❌ 创建失败" >&2
-        echo "API 状态: $API_STATUS" >&2
+        echo "API状态: $API_STATUS" >&2
         echo "错误信息: $MESSAGE" >&2
         echo "$RESPONSE" | jq . >&2
         exit 1  # 终止脚本
@@ -284,7 +284,6 @@ ssh_and_run_script() {
     local instance_user="$2"
     local max_retries=5
     local wait_time=10
-    # local run_time=30
     local config_succeeded=1
 
     echo -e "\n⚙️ 正在通过 SSH 登录并执行脚本..." >&2
@@ -334,9 +333,9 @@ main() {
     DESTROY_COUNT=0
     DESTROY_FAIL=0
 
-    echo -e "\n=========================================="
+    echo -e "\n======================================"
     echo "🔥 阶段一：批量销毁现有实例"
-    echo "=========================================="
+    echo "======================================"
 
     if [ "$GET_ID_STATUS" -eq 0 ]; then
         read -ra ID_ARRAY <<< "$ALL_INSTANCE_IDS"
@@ -355,9 +354,9 @@ main() {
     fi
 
     # 部署新实例
-    echo -e "\n=========================================="
+    echo -e "\n======================================"
     echo "🚀 阶段二：部署新实例"
-    echo "=========================================="
+    echo "======================================"
 
     # 捕获 ID, IP, USER, PASS
     NEW_INSTANCE_INFO=$(deploy_instance)
@@ -382,10 +381,10 @@ main() {
         NEW_USER="root" # 默认用户名
     fi
 
-    # SSH执行配置脚本
-    echo -e "\n=========================================="
+    # SSH执行远程脚本
+    echo -e "\n======================================"
     echo "⚙️ 阶段三：通过 SSH 执行远程配置"
-    echo "=========================================="
+    echo "======================================"
 
     local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
