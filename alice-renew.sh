@@ -149,11 +149,11 @@ destroy_instance() {
     MESSAGE=$(echo "$RESPONSE" | jq -r '.message // "无消息"')
 
     if [ "$API_STATUS" == "200" ]; then
-        echo "状态: ✅ 销毁成功" >&2
+        echo "实例状态: ✅ 销毁成功" >&2
         echo "消息: $MESSAGE" >&2
         return 0
     else
-        echo "状态: ❌ 销毁失败" >&2
+        echo "实例状态: ❌ 销毁失败" >&2
         echo "API状态: $API_STATUS)" >&2
         echo "错误信息: $MESSAGE" >&2
         echo "$RESPONSE" | jq . >&2
@@ -242,14 +242,14 @@ ${DETAILS_TEXT}
 ========================
 EOF
         )
-        send_tg_notification "$TG_SUCCESS_MSG"
-        DETAILS_TEXT_LOG=$(escape_html "$DETAILS_TEXT")
-        
-        # 打印到 stderr
-        echo "状态: ✅ 创建成功" >&2
+        TG_SUCCESS_MSG2=$(escape_html "$TG_SUCCESS_MSG")
+        send_tg_notification "$TG_SUCCESS_MSG2"
+
+        # 输出到终端
+        DETAILS_TEXT_LOG="$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g'
+        echo "实例状态: ✅ 创建成功" >&2
         echo "----- 新实例详情 -----" >&2
-        echo "$DETAILS_TEXT_LOG"
-        # echo "$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g' >&2
+        echo "$DETAILS_TEXT_LOG" >&2
         echo "--------------------" >&2
         
         # 返回新实例 ID IP USER PASS 以供后续使用
@@ -267,14 +267,14 @@ API状态: ${API_STATUS}
 请检查账户权限或 API 配置。
 EOF
         )
-        # TG_FAIL_MSG=$(escape_html "$TG_FAIL_MSG")
-        send_tg_notification "$TG_FAIL_MSG"
+        TG_FAIL_MSG2=$(escape_html "$TG_FAIL_MSG")
+        send_tg_notification "$TG_FAIL_MSG2"
 
-        echo "状态: ❌ 创建失败" >&2
+        echo "实例状态: ❌ 创建失败" >&2
         echo "API状态: $API_STATUS" >&2
         echo "错误信息: $MESSAGE" >&2
         echo "$RESPONSE" | jq . >&2
-        exit 1  # 终止脚本
+        exit 1
     fi
 }
 
