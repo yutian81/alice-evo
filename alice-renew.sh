@@ -217,8 +217,7 @@ deploy_instance() {
         fi
 
         # 构造新实例详细信息 (用于日志和 TG)
-        DETAILS_TEXT="
-实例 ID: $NEW_ID
+        DETAILS_TEXT="实例 ID: $NEW_ID
 部署方案: $NEW_PLAN
 硬件配置: CPU: $NEW_CPU G, 内存: $NEW_MEM M, 磁盘: $NEW_DISK G
 操作系统: $NEW_OS
@@ -227,12 +226,12 @@ deploy_instance() {
 创建时间: $NEW_CREAT
 过期时间: $NEW_EXPIR
 剩余时间: $REMAINING
+------ SSH登录信息 ------
 IPv4 地址: <code>${NEW_IP}</code>
 IPv6 地址: <code>${NEW_IPV6}</code>
 主机名: <code>${NEW_HOST}</code>
 用户名: <code>${NEW_USER}</code>
-密码: <code>${NEW_PASS}</code>
-"
+密码: <code>${NEW_PASS}</code>"
 
         # 构造 Telegram 成功消息
         TG_SUCCESS_MSG=$(cat <<EOF
@@ -242,11 +241,10 @@ ${DETAILS_TEXT}
 ========================
 EOF
         )
-        TG_SUCCESS_MSG2=$(escape_html "$TG_SUCCESS_MSG")
-        send_tg_notification "$TG_SUCCESS_MSG2"
+        send_tg_notification "$TG_SUCCESS_MSG"
 
         # 输出到终端
-        DETAILS_TEXT_LOG="$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g'
+        DETAILS_TEXT_LOG=$(echo "$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g')
         echo "实例状态: ✅ 创建成功" >&2
         echo "----- 新实例详情 -----" >&2
         echo "$DETAILS_TEXT_LOG" >&2
@@ -267,8 +265,7 @@ API状态: ${API_STATUS}
 请检查账户权限或 API 配置。
 EOF
         )
-        TG_FAIL_MSG2=$(escape_html "$TG_FAIL_MSG")
-        send_tg_notification "$TG_FAIL_MSG2"
+        send_tg_notification "$TG_FAIL_MSG"
 
         echo "实例状态: ❌ 创建失败" >&2
         echo "API状态: $API_STATUS" >&2
