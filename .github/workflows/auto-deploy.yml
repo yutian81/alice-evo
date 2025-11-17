@@ -37,7 +37,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.ALICE_SSH_KEY }}
 
-      - name: 🚀 执行 Alice Evo 自动化部署脚本
+      - name: 🚀 自动部署 nodejs-argo
         id: deploy
         env:
           ALICE_CLIENT_ID: ${{ secrets.ALICE_CLIENT_ID }}
