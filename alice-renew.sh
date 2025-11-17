@@ -219,7 +219,7 @@ deploy_instance() {
         # 构造新实例详细信息 (用于日志和 TG)
         DETAILS_TEXT="实例 ID: $NEW_ID
 部署方案: $NEW_PLAN
-硬件配置: CPU: $NEW_CPU G, 内存: $NEW_MEM M, 磁盘: $NEW_DISK G
+硬件配置: CPU: ${NEW_CPU}G, 内存: ${NEW_MEM}M, 磁盘: ${NEW_DISK}G
 操作系统: $NEW_OS
 区域: $NEW_REGION
 状态: $NEW_STATUS
@@ -385,7 +385,7 @@ main() {
 
     local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
-        echo -e "\n🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功完成！"
+        echo -e "🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功完成！"
         echo -e "🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取节点内容"
         echo -e "🎉 SSH连接信息：IP: ${TARGET_IP}, 端口: 22, 用户名: ${NEW_USER}, 密码: ${NEW_PASS}"
     else
