@@ -163,7 +163,7 @@ destroy_instance() {
 
 # 创建实例（默认时长24小时）
 deploy_instance() {
-    echo -e "\n🚀 正在部署新实例 (Plan ID: ${PRODUCT_ID}, OS ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h...)" >&2
+    echo -e "\n🚀 正在部署新实例 (PRODUCT_ID: ${PRODUCT_ID}, OS_ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h...)" >&2
     
     CURL_CMD="curl -L -s -X POST \"$API_DEPLOY_URL\" \
         -H \"Authorization: Bearer $AUTH_TOKEN\" \
