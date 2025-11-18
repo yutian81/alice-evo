@@ -111,7 +111,7 @@ get_ssh_key_id() {
 
 # 获取实例列表
 get_instance_ids() {
-    echo "▶️ 正在尝试从获取实例列表..." >&2
+    echo "▶️ 正在尝试获取实例列表..." >&2
     LIST_RESPONSE=$(curl -L -s -X GET "$API_LIST_URL" -H "Authorization: Bearer $AUTH_TOKEN")
     API_STATUS=$(echo "$LIST_RESPONSE" | jq -r '.status // empty')
     
