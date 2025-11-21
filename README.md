@@ -12,7 +12,6 @@ NEZHA_SERVER=nezha.example.com \
 NEZHA_KEY=abcd1234 \
 ARGO_DOMAIN=myargo.site \
 ARGO_AUTH=eyJhIjoixxxxxx \
-NAME=IDX \
 ./vpsnpm.sh
 ```
 
