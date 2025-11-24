@@ -113,7 +113,7 @@ get_ssh_key_id() {
 get_instance_ids() {
     echo "▶️ 正在尝试获取实例列表..." >&2
     LIST_RESPONSE=$(curl -L -s -X GET "$API_LIST_URL" -H "Authorization: Bearer $AUTH_TOKEN")
-    API_STATUS=$(echo "$LIST_RESPONSE" | jq -r '.status // empty')
+    API_STATUS=$(echo "$LIST_RESPONSE" | jq -r '.code // empty')
     
     if [ "$API_STATUS" != "200" ]; then
         echo "❌ 获取实例列表失败 (API状态: $API_STATUS)" >&2
