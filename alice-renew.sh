@@ -166,16 +166,18 @@ deploy_instance() {
 
     # 使用 jq 构造 JSON 负载
     PAYLOAD=$(jq -n \
-        --argjson product_id "$PRODUCT_ID" \
-        --argjson os_id "$OS_ID" \
-        --argjson time "$DEPLOY_TIME_HOURS" \
+        --arg product_id "$PRODUCT_ID" \
+        --arg os_id "$OS_ID" \
+        --arg time "$DEPLOY_TIME_HOURS" \
         --arg ssh_key_id "$ALICE_SSH_KEY_ID" \
-        '{
-            "product_id": $product_id,
-            "os_id": $os_id,
-            "time": $time,
-            "ssh_key_id": if $ssh_key_id | length > 0 then ($ssh_key_id | tonumber) else null end
-        }'
+        '
+        {
+            "product_id": ($product_id | tonumber),
+            "os_id": ($os_id | tonumber),
+            "time": ($time | tonumber),
+            "ssh_key_id": (if $ssh_key_id | length > 0 then ($ssh_key_id | tonumber) else null end)
+        }
+        '
     )
     
     CURL_CMD="curl -L -s -X POST \"$API_DEPLOY_URL\" \
