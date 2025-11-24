@@ -88,7 +88,7 @@ get_ssh_key_id() {
     echo "▶️ 正在尝试获取 SSH Key ID (Key名称: $key_name)..." >&2
     
     SSH_KEY_RESPONSE=$(curl -L -s -X GET "$API_SSH_KEY_URL" -H "Authorization: Bearer $AUTH_TOKEN")
-    API_STATUS=$(echo "$SSH_KEY_RESPONSE" | jq -r '.status // empty')
+    API_STATUS=$(echo "$SSH_KEY_RESPONSE" | jq -r '.code // empty')
 
     if [ "$API_STATUS" != "200" ]; then
         echo "❌ 获取 SSH Key 列表失败 (API状态: $API_STATUS)" >&2
@@ -144,7 +144,7 @@ destroy_instance() {
         return 1
     fi
 
-    API_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
+    API_STATUS=$(echo "$RESPONSE" | jq -r '.code // empty')
     MESSAGE=$(echo "$RESPONSE" | jq -r '.message // "无消息"')
 
     if [ "$API_STATUS" == "200" ]; then
@@ -182,7 +182,7 @@ deploy_instance() {
         exit 1
     fi
 
-    API_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
+    API_STATUS=$(echo "$RESPONSE" | jq -r '.code // empty')
     MESSAGE=$(echo "$RESPONSE" | jq -r '.message // "无消息"')
 
     if [ "$API_STATUS" == "200" ]; then
