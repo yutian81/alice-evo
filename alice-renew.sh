@@ -19,10 +19,10 @@ NODEJS_COMMAND="${NODEJS_COMMAND}"                            # nodejs-argo 远�
 
 # Alice API 端点
 API_BASE_URL="https://app.alice.ws/cli/v1"
-API_DESTROY_URL="${API_BASE_URL}/Evo/Destroy"
-API_DEPLOY_URL="${API_BASE_URL}/Evo/Deploy"
-API_LIST_URL="${API_BASE_URL}/Evo/Instance"
-API_SSH_KEY_URL="${API_BASE_URL}/User/SSHKey"
+API_DESTROY_URL="${API_BASE_URL}/evo/instances"
+API_DEPLOY_URL="${API_BASE_URL}/evo/instances/deploy"
+API_LIST_URL="${API_BASE_URL}/evo/instances"
+API_SSH_KEY_URL="${API_BASE_URL}/account/ssh-keys"
 
 # Telegram 通知配置 (需要从 GitHub action secrets 传入)
 TG_BOT_TOKEN="${TG_BOT_TOKEN}"
@@ -135,9 +135,8 @@ destroy_instance() {
     local instance_id="$1"
     echo -e "\n🔥 正在销毁实例, ID: ${instance_id}..." >&2
     
-    RESPONSE=$(curl -L -s -X POST "$API_DESTROY_URL" \
-        -H "Authorization: Bearer $AUTH_TOKEN" \
-        -F "id=$instance_id")
+    RESPONSE=$(curl -L -s -X DELETE "$API_DESTROY_URL/${instance_id}" \
+        -H "Authorization: Bearer $AUTH_TOKEN")
     CURL_STATUS=$?
 
     if [ "$CURL_STATUS" -ne 0 ]; then
