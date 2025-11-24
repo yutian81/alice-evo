@@ -163,16 +163,25 @@ destroy_instance() {
 # 创建实例（默认时长24小时）
 deploy_instance() {
     echo -e "\n🚀 正在部署新实例 (PRODUCT_ID: ${PRODUCT_ID}, OS_ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h...)" >&2
+
+    # 使用 jq 构造 JSON 负载
+    PAYLOAD=$(jq -n \
+        --argjson product_id "$PRODUCT_ID" \
+        --argjson os_id "$OS_ID" \
+        --argjson time "$DEPLOY_TIME_HOURS" \
+        --arg ssh_key_id "$ALICE_SSH_KEY_ID" \
+        '{
+            "product_id": $product_id,
+            "os_id": $os_id,
+            "time": $time,
+            "ssh_key_id": if $ssh_key_id | length > 0 then ($ssh_key_id | tonumber) else null end
+        }'
+    )
     
     CURL_CMD="curl -L -s -X POST \"$API_DEPLOY_URL\" \
         -H \"Authorization: Bearer $AUTH_TOKEN\" \
-        -F \"product_id=$PRODUCT_ID\" \
-        -F \"os_id=$OS_ID\" \
-        -F \"time=$DEPLOY_TIME_HOURS\""
-
-    if [ -n "$ALICE_SSH_KEY_ID" ]; then
-        CURL_CMD="$CURL_CMD -F \"sshKey=$ALICE_SSH_KEY_ID\""
-    fi
+        -H \"Content-Type: application/json\" \
+        -d '$PAYLOAD'"
 
     RESPONSE=$(eval "$CURL_CMD")
     CURL_STATUS=$?
