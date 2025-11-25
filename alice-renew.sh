@@ -42,7 +42,6 @@ check_token_and_depend() {
     fi
 }
 
-
 # Telegram 通知函数
 send_tg_notification() {
     if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
