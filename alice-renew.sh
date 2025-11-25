@@ -6,23 +6,22 @@
 ALICE_CLIENT_ID="${ALICE_CLIENT_ID}"
 ALICE_API_SECRET="${ALICE_API_SECRET}"
 AUTH_TOKEN="${ALICE_CLIENT_ID}:${ALICE_API_SECRET}"
-ALICE_ACCOUNT_USER="${ALICE_ACCOUNT_USER}"                    # alice 注册账号的用户名
-ALICE_SSH_HOST="${ALICE_ACCOUNT_USER}.evo.host.aliceinit.dev" # 默认 SSH 主机名
 
 # 实例部署配置
-PRODUCT_ID=${PRODUCT_ID:-38}                                  # 默认：SLC.Evo.Pro (ID 38)
-OS_ID=${OS_ID:-1}                                             # 默认：Debian 12 (ID 1)
-DEPLOY_TIME_HOURS=${DEPLOY_TIME_HOURS:-24}                    # 默认：24 小时
-ALICE_SSH_KEY_NAME="${ALICE_SSH_KEY_NAME:-alice-yutian81}"    # 目标 SSH 公钥的名称
-ALICE_SSH_KEY_ID=""                                           # 将通过脚本获取
-NODEJS_COMMAND="${NODEJS_COMMAND}"                            # nodejs-argo 远程脚本
+PRODUCT_ID=${PRODUCT_ID:-38}                 # 默认：SLC.Evo.Pro (ID 38)
+OS_ID=${OS_ID:-1}                            # 默认：Debian 12 (ID 1)
+DEPLOY_TIME_HOURS=${DEPLOY_TIME_HOURS:-24}   # 默认：24 小时
+ALICE_ACCOUNT_USER="${ALICE_ACCOUNT_USER}"   # 可选：Alice 账户用户名 (如果未设置，将被脚本自动获取)
+ALICE_SSH_KEY_ID=""                          # 将通过脚本获取第一个 Key ID
+NODEJS_COMMAND="${NODEJS_COMMAND}"           # nodejs-argo 远程脚本
 
 # Alice API 端点
 API_BASE_URL="https://app.alice.ws/cli/v1"
-API_DESTROY_URL="${API_BASE_URL}/evo/instances"
-API_DEPLOY_URL="${API_BASE_URL}/evo/instances/deploy"
-API_LIST_URL="${API_BASE_URL}/evo/instances"
-API_SSH_KEY_URL="${API_BASE_URL}/account/ssh-keys"
+API_DESTROY_URL="${API_BASE_URL}/evo/instances"          # DELETE 需要附加实例 ID
+API_DEPLOY_URL="${API_BASE_URL}/evo/instances/deploy"    # POST 部署实例
+API_LIST_URL="${API_BASE_URL}/evo/instances"             # GET 实例列表
+API_USER_URL="${API_BASE_URL}/account/profile"           # GET 用户信息
+API_SSH_KEY_URL="${API_BASE_URL}/account/ssh-keys"       # GET SSH 公钥列表
 
 # Telegram 通知配置 (需要从 GitHub action secrets 传入)
 TG_BOT_TOKEN="${TG_BOT_TOKEN}"
@@ -31,23 +30,18 @@ TG_API_BASE="https://api.telegram.org"
 
 # --- 2. 辅助函数 ---
 
-check_config() {
+# 检查必需的令牌和依赖项
+check_token_and_depend() {
     if [ -z "$ALICE_CLIENT_ID" ] || [ -z "$ALICE_API_SECRET" ]; then
         echo "❌ 错误：ALICE_CLIENT_ID 或 ALICE_API_SECRET 变量未设置" >&2
         exit 1
     fi
-    if [ -z "$ALICE_SSH_KEY_NAME" ]; then
-        echo "❌ 错误：ALICE_SSH_KEY_NAME 未设置，无法自动获取 SSH Key ID" >&2
-        exit 1
-    fi
-}
-
-check_jq() {
     if ! command -v jq &> /dev/null; then
         echo "❌ 错误：未找到 'jq' 命令。脚本无法继续执行" >&2
         exit 1
     fi
 }
+
 
 # Telegram 通知函数
 send_tg_notification() {
@@ -82,10 +76,33 @@ escape_html() {
     echo "$text"
 }
 
-# 获取指定名称的 SSH Key ID
+# 获取用户信息
+get_account_username() {
+    echo "▶️ 正在尝试获取 Alice 账户用户名..." >&2
+
+    USER_RESPONSE=$(curl -L -s -X GET "$API_USER_URL" -H "Authorization: Bearer $AUTH_TOKEN")
+    API_STATUS=$(echo "$USER_RESPONSE" | jq -r '.code // empty')
+
+    if [ "$API_STATUS" != "200" ]; then
+        echo "❌ 获取用户资料失败 (API状态: $API_STATUS)" >&2
+        return 1
+    fi
+
+    local username=$(echo "$USER_RESPONSE" | jq -r '.data.username // empty')
+
+    if [ -z "$username" ]; then
+        echo "❌ 错误：从 API 响应中未找到 'username' 字段" >&2
+        return 2
+    fi
+
+    echo "✅ 成功获取 Alice 用户名: $username" >&2
+    echo "$username"
+    return 0
+}
+
+# 获取列表中的第一个 SSH Key ID
 get_ssh_key_id() {
-    local key_name="$1"
-    echo "▶️ 正在尝试获取 SSH Key ID (Key名称: $key_name)..." >&2
+    echo "▶️ 正在尝试获取第一个可用的 SSH Key ID..." >&2
     
     SSH_KEY_RESPONSE=$(curl -L -s -X GET "$API_SSH_KEY_URL" -H "Authorization: Bearer $AUTH_TOKEN")
     API_STATUS=$(echo "$SSH_KEY_RESPONSE" | jq -r '.code // empty')
@@ -94,17 +111,17 @@ get_ssh_key_id() {
         echo "❌ 获取 SSH Key 列表失败 (API状态: $API_STATUS)" >&2
         return 1
     fi
-
-    local key_id=$(echo "$SSH_KEY_RESPONSE" | \
-        jq -r --arg name "$key_name" '.data[] | select(.name == $name) | .id // empty')
+    
+    # 提取数组中第一个元素的 ID 和名称
+    local key_id=$(echo "$SSH_KEY_RESPONSE" | jq -r '.data[0].id // empty')
+    local key_name=$(echo "$SSH_KEY_RESPONSE" | jq -r '.data[0].name // "未知"')
 
     if [ -z "$key_id" ]; then
-        echo "❌ 错误：未找到名称为 $key_name 的 SSH Key ID" >&2
-        echo "⚠️ 注意：如果您希望使用的公钥尚未在 Alice 后台添加，请手动添加" >&2
+        echo "❌ 错误：SSH Key 列表为空。请确保您已在 Alice 后台添加了公钥。" >&2
         return 2
     fi
     
-    echo "✅ 成功获取 SSH Key ID: $key_id" >&2
+    echo "✅ 成功获取 SSH Key ID: $key_id (名称: $key_name)" >&2
     echo "$key_id"
     return 0
 }
@@ -323,15 +340,27 @@ ssh_and_run_script() {
 
 # --- 4. 主函数 ---
 main() {
-    check_config
-    check_jq
+    check_token_and_depend  # 检查 Alice API 令牌和依赖项
 
-    # 自动获取 SSH Key ID
-    ALICE_SSH_KEY_ID=$(get_ssh_key_id "$ALICE_SSH_KEY_NAME")
+    # 自动获取 ALICE_ACCOUNT_USER 如果它未设置
+    USER_NAME=$(get_account_username)
+    GET_USER_STATUS=$?
+    if [ "$GET_USER_STATUS" -eq 0 ]; then
+        ALICE_ACCOUNT_USER="$USER_NAME"
+        echo "ℹ️ ALICE_ACCOUNT_USER 设置为: $ALICE_ACCOUNT_USER" >&2
+    else
+        echo "⚠️ 警告：无法获取 Alice 账户用户名。SSH 连接将完全依赖于 API 返回的 IP 地址" >&2
+        ALICE_ACCOUNT_USER=""
+    fi
+    ALICE_SSH_HOST="${ALICE_ACCOUNT_USER}.evo.host.aliceinit.dev"
+
+    # 自动获取 SSH Key ID 不再依赖 ALICE_SSH_KEY_NAME 参数
+    ALICE_SSH_KEY_ID=$(get_ssh_key_id) 
     GET_KEY_STATUS=$?
     if [ "$GET_KEY_STATUS" -ne 0 ]; then
-        echo "❌ 无法获取 SSH Key ID，流程终止。" >&2
-        exit 1
+        echo "⚠️ 警告：无法获取 SSH Key ID。将在不使用 SSH Key 的情况下部署实例" >&2
+        echo "⚠️ 你需要使用实例默认生成的密码登录" >&2
+        ALICE_SSH_KEY_ID="" 
     fi
 
     # 获取并销毁现有实例
