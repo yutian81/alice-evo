@@ -43,13 +43,9 @@ jobs:
           ALICE_CLIENT_ID: ${{ secrets.ALICE_CLIENT_ID }}
           ALICE_API_SECRET: ${{ secrets.ALICE_API_SECRET }}
           ALICE_ACCOUNT_USER: ${{ secrets.ALICE_ACCOUNT_USER }}
-          ALICE_SSH_KEY_NAME: ${{ secrets.ALICE_SSH_KEY_NAME }}
           NODEJS_COMMAND: ${{ secrets.NODEJS_COMMAND }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
           chmod +x alice-renew.sh
           ./alice-renew.sh
-
-
-
