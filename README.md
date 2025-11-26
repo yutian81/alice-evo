@@ -22,6 +22,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 ```
 
 ## alice auto deploy
+
 ### 必须变量
 - **ALICE_CLIENT_ID**
 - **ALICE_API_SECRET**
@@ -37,7 +38,6 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - PRODUCT_ID：部署方案ID，可选 38 | 39 | 40 | 41
 - OS_ID：部署系统ID，可选 1-10
 - DEPLOY_TIME_HOURS：VPS存活时长，可选1-24，单位：小时
-
 - PRODUCT_ID 明细
 
 | 参数   | ID值   | 名称    | 注释    |
@@ -71,21 +71,15 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 https://app.alice.ws/cli/v1
 ```
 
-- API 端点明细
+- **本项目使用到的 API 接口**
 
-| 功能          | 端点             | 请求方式 | Bearer Token | 请求体 Body (formdata) | 
-| ------------- | --------------- | ------- | ------------ | ---------------------- |
-| 获取实例列表   | /Evo/Instance   | GET     | Token        | 无                    | 
-| 部署实例      | /Evo/Deploy      | POST    | Token        | product_id、os_id、time、bootScript、sshKey  | 
-| 销毁实例      | /Evo/Destroy     | POST    | Token        | id | 
-| 操作实例      | /Evo/Power       | POST    | Token        | id、action |
-| 重装系统      | /Evo/Rebuild     | POST    | Token        | id、os、bootScript、sshKey |
-| 续订实例      | /Evo/Renewal     | POST    | Token        | id、time |
-| 实例详情      | /Evo/State       | POST    | Token        | id |
-| 异步执行命令  | /Command/executeAsync | POST | Token       | server_id、command |
-| 命令执行结果  | /Command/getResult | POST   | Token        | command_uid、output_base64 |
-| 实例方案列表  | /Evo/Plan         | GET     | Token        | 无 |
-| 方案系统列表  | /Evo/getOSByPlan  | POST    | Token        | plan_id |
-| 用户公钥列表  | /User/SSHKey      | GET     | Token        | 无 |
-| 用户实例部署权限      | /User/EVOPermissions      | GET     | Token        | 无 |
-| 用户信息      | /User/Info        | GET     | Token        | 无 |
+  - 授权类型：`Authorization: Bearer $AUTH_TOKEN`
+  - Headers: `Content-Type:application/json`
+
+| 接口功能   | 接口路径              | 请求方式 | 请求体 |
+| --------- | --------------------- | ------- | ------ |
+| 删除实例   | `/evo/instances/<id>` | DELETE  | 无     |
+| 部署实例   | `/evo/instances/deploy` | POST  | "product_id": 38,</br>"os_id": 1,</br>"time": 24,</br>"ssh_key_id": 1099,</br>"boot_script": "base64编码后的命令" |
+| 实例列表   | `/evo/instances`      | GET     | 无     |
+| 用户信息   | `/account/profile`    | GET     | 无     |
+| SSH 公钥列表 | `/account/ssh-keys` | GET     | 无     |
