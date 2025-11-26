@@ -40,27 +40,27 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - DEPLOY_TIME_HOURS：VPS存活时长，可选1-24，单位：小时
 - PRODUCT_ID 明细
 
-| 参数   | ID值   | 名称    | 注释    |
+| 参数   | ID值   | 名称    | 配置    |
 | ------ | ----- | ------ |-------- |
 | PRODUCT_ID | 38 | SLC.Evo.Micro 入门版 | 2c-4g-60g |
 | PRODUCT_ID | 39 | SLC.Evo.Standard 标准版 | 4c-8g-120g |
 | PRODUCT_ID | 40 | SLC.Evo.Pro 专业版 | 8c-16g-200g |
-| PRODUCT_ID | 41 | SLC.Evo.Pro 专业版 | 16c-32g-300g |
+| PRODUCT_ID | 41 | SLC.Evo.Ultra 豪华版 | 16c-32g-300g |
 
 - OS_ID 明细
-
-| 参数   | ID值   | 系统   | 版本参数   | ID值   | 版本号 |
-| ------ | ----- | ------ |-----------|---------|------|
-| group_id | 1 | Debian | OS_ID | 1 | Debian 12 (Bookworm) Minimal |
-| group_id | 1 | Debian | OS_ID | 2 | Debian 11 (Bullseye) Minimal |
-| group_id | 1 | Debian | OS_ID | 10 | Debian 12 DevKit |
-| group_id | 2 | Ubuntu | OS_ID | 3 | Ubuntu Server 20.04 LTS Minimal |
-| group_id | 2 | Ubuntu | OS_ID | 4 | Ubuntu Server 22.04 LTS Minimal |
-| group_id | 3 | Centos | OS_ID | 5 | CentOS 7 Minimal |
-| group_id | 3 | Centos | OS_ID | 6 | CentOS Stream 9 Minimal |
-| group_id | 4 | AlmaLinux | OS_ID | 7 | AlmaLinux 8 Minimal |
-| group_id | 4 | AlmaLinux | OS_ID | 8 | AlmaLinux 9 Latest |
-| group_id | 6 | Alpine Linux | OS_ID | 9 | Alpine Linux 3.19 |
+| 参数  | ID值 | 系统类型 | 系统版本                         |
+| ----- | --- | -------- | ------------------------------- |
+| OS_ID | 1   | Debian   | Debian 12 (Bookworm) Minimal    |
+| OS_ID | 2   | Debian   | Debian 11 (Bullseye) Minimal    |
+| OS_ID | 10  | Debian   | Debian 12 DevKit    |
+| OS_ID | 13  | Debian   | Debian 13 (Trixie) Minimal    |
+| OS_ID | 3   | Ubuntu   | Ubuntu Server 20.04 LTS Minimal |
+| OS_ID | 4   | Ubuntu   | Ubuntu Server 22.04 LTS Minimal |
+| OS_ID | 5   | CentOS   | CentOS 7 Minimal |
+| OS_ID | 6   | CentOS   | CentOS Stream 9 Minimal |
+| OS_ID | 7   | AlmaLinux   | AlmaLinux 8 Minimal |
+| OS_ID | 8   | AlmaLinux   | AlmaLinux 8 Minimal |
+| OS_ID | 9   | Alpine    | Alpine Linux 3.19 |
 
 ### alice API
 
