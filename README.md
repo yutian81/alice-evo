@@ -35,10 +35,11 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - TG_CHAT_ID：TG通知需要
 
 ### 实例参数配置
-- PRODUCT_ID：部署方案ID，可选 38 | 39 | 40 | 41
-- OS_ID：部署系统ID，可选 1-10
-- DEPLOY_TIME_HOURS：VPS存活时长，可选1-24，单位：小时
-- PRODUCT_ID 明细
+- PRODUCT_ID：部署方案ID, `默认38`, 可选 38 | 39 | 40 | 41
+- OS_ID：部署系统ID, `默认1`, 可选 1-10
+- DEPLOY_TIME_HOURS：VPS时长, `默认24`, 可选1-24，单位：小时
+
+**PRODUCT_ID 明细**
 
 | 参数   | ID值   | 名称    | 配置    |
 | ------ | ----- | ------ |-------- |
@@ -47,7 +48,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 | PRODUCT_ID | 40 | SLC.Evo.Pro 专业版 | 8c-16g-200g |
 | PRODUCT_ID | 41 | SLC.Evo.Ultra 豪华版 | 16c-32g-300g |
 
-- OS_ID 明细
+**OS_ID 明细**
 
 | 参数  | ID值 | 系统类型 | 系统版本                         |
 | ----- | --- | -------- | ------------------------------- |
