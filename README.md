@@ -65,12 +65,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 ### alice API
 
 - **官方文档**：https://api.aliceinit.io/
-
-- **基础地址 API_BASE_URL**
-```
-https://app.alice.ws/cli/v1
-```
-
+- **基础地址 API_BASE_URL**: `https://app.alice.ws/cli/v1`
 - **本项目使用到的 API 接口**
 
   - 授权类型：`Authorization: Bearer $AUTH_TOKEN`
