@@ -48,6 +48,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 | PRODUCT_ID | 41 | SLC.Evo.Ultra 豪华版 | 16c-32g-300g |
 
 - OS_ID 明细
+
 | 参数  | ID值 | 系统类型 | 系统版本                         |
 | ----- | --- | -------- | ------------------------------- |
 | OS_ID | 1   | Debian   | Debian 12 (Bookworm) Minimal    |
