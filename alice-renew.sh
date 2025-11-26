@@ -15,7 +15,7 @@ ALICE_ACCOUNT_USER="${ALICE_ACCOUNT_USER}"   # 可选：Alice 账户用户名 (�
 ALICE_SSH_KEY_ID=""                          # 将通过脚本获取第一个 Key ID
 NODEJS_COMMAND="${NODEJS_COMMAND}"           # nodejs-argo 远程脚本
 
-# Alice API 端点
+# Alice API 端点, 官方文档: https://api.aliceinit.io
 API_BASE_URL="https://app.alice.ws/cli/v1"
 API_DESTROY_URL="${API_BASE_URL}/evo/instances"          # DELETE 需要附加实例 ID
 API_DEPLOY_URL="${API_BASE_URL}/evo/instances/deploy"    # POST 部署实例
