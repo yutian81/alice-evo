@@ -31,7 +31,7 @@ download_script() {
     
     echo "▶️ 正在下载脚本并保存"
     if curl -o "$TARGET_PATH" -Ls "$DOWNLOAD_URL" && chmod +x "$TARGET_PATH"; then
-        echo "✅ 脚本保存成功，路径: ${TARGET_PATH}" >&2
+        echo "✅ 脚本 ${TARGET_PATH} 下载成功并赋权" >&2
     else
         echo "❌ 脚本下载/保存/权限设置失败，退出..." >&2
         exit 1
