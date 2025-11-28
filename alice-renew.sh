@@ -343,11 +343,11 @@ main() {
     # 自动获取 ALICE_ACCOUNT_USER 如果它未设置
     USER_NAME=$(get_account_username)
     GET_USER_STATUS=$?
-    if [ "$GET_USER_STATUS" -eq 0 ]; then
+    if [ "$GET_USER_STATUS" -eq 0 ] && [ -n "$USER_NAME" ]; then
         ALICE_ACCOUNT_USER="$USER_NAME"
     else
-        ALICE_ACCOUNT_USER="$ALICE_ACCOUNT_USER"
-        echo "⚠️ 警告：无法获取 Alice 账户用户名。SSH 将以 IP 地址连接" >&2
+        echo "⚠️ 获取 Alice 用户名失败, 将使用 action secret 传入的值: ${ALICE_ACCOUNT_USER}" >&2
+        echo "⚠️ 如果 action secret 未设置该变量, 则该变量为空值" >&2
     fi
     ALICE_SSH_HOST="${ALICE_ACCOUNT_USER}.evo.host.aliceinit.dev"
     echo "▶️ ALICE_SSH_HOST: ${ALICE_SSH_HOST}" >&2
