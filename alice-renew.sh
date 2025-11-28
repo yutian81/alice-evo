@@ -1,4 +1,26 @@
-E_URL}/account/ssh-keys"       # GET SSH 公钥列表
+#!/bin/bash
+
+# --- 1. 配置信息 (从环境变量获取) ---
+
+# 鉴权变量, 从 https://console.alice.ws/ephemera/evo-cloud 获取
+ALICE_CLIENT_ID="${ALICE_CLIENT_ID}"
+ALICE_API_SECRET="${ALICE_API_SECRET}"
+AUTH_TOKEN="${ALICE_CLIENT_ID}:${ALICE_API_SECRET}"
+
+# 实例部署配置
+PRODUCT_ID=${PRODUCT_ID:-38}                 # 默认：SLC.Evo.Pro (ID 38)
+OS_ID=${OS_ID:-1}                            # 默认：Debian 12 (ID 1)
+DEPLOY_TIME_HOURS=${DEPLOY_TIME_HOURS:-24}   # 默认：24 小时
+NODEJS_COMMAND="${NODEJS_COMMAND:-""}"       # nodejs-argo 远程脚本
+ALICE_SSH_KEY_ID=""                          # 由脚本动态赋值
+
+# Alice API 端点, 官方文档: https://api.aliceinit.io
+API_BASE_URL="https://app.alice.ws/cli/v1"
+API_DESTROY_URL="${API_BASE_URL}/evo/instances"          # DELETE 删除实例
+API_DEPLOY_URL="${API_BASE_URL}/evo/instances/deploy"    # POST 部署实例
+API_LIST_URL="${API_BASE_URL}/evo/instances"             # GET 实例列表
+API_USER_URL="${API_BASE_URL}/account/profile"           # GET 用户信息
+API_SSH_KEY_URL="${API_BASE_URL}/account/ssh-keys"       # GET SSH 公钥列表
 
 # Telegram 通知配置 (需要从 GitHub action secrets 传入)
 TG_BOT_TOKEN="${TG_BOT_TOKEN}"
