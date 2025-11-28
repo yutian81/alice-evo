@@ -219,7 +219,7 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     echo -e "\n----- 🚀 节点信息 (Base64) -----"
     if [ -f "${SUB_FILE}" ]; then
         cat "${SUB_FILE}"
-        echo -e "\n-----------------------------\n"
+        echo -e "\n-----------------------------"
     else
         echo "❌ 警告：未在预期时间内找到节点信息文件 ${SUB_FILE}"
         echo "⚠️ 请稍后手动通过 SSH 连接检查：cat ${SUB_FILE}"
