@@ -14,7 +14,6 @@ SYSTEM_USER="root"
 # 变量定义和赋值
 define_vars() {
     unset NAME
-    # 变量赋值
     export UUID=${UUID:-'3001b2b7-e810-45bc-a1af-2c302b530d40'}
     export NEZHA_SERVER=${NEZHA_SERVER:-''}
     export NEZHA_PORT=${NEZHA_PORT:-''}
@@ -29,7 +28,7 @@ define_vars() {
 setup_environment() {
     # 权限检查：允许非 root 用户执行已安装的服务脚本，但首次安装必须是 root
     if [ "$EUID" -ne 0 ] && [ ! -f "$SERVICE_FILE" ] && [ ! -f "$OPENRC_SERVICE_FILE" ]; then
-        echo "🚨 首次安装服务需要 root 权限。请使用 sudo 运行此脚本："
+        echo "⚠️ 首次安装服务需要 root 权限。请使用 sudo 运行此脚本"
         echo "sudo bash $0"
         exit 1
     fi
@@ -38,7 +37,7 @@ setup_environment() {
     cd "${SERVICE_DIR}" || { echo "无法进入目录 ${SERVICE_DIR}，退出。"; exit 1; }
 
     if [[ "$SCRIPT_SOURCE_PATH" != "$SCRIPT_PATH" ]]; then
-        echo "🔄 将脚本复制到目标路径: ${SCRIPT_PATH}"
+        echo "▶️ 将脚本复制到目标路径: ${SCRIPT_PATH}"
         cp "$SCRIPT_SOURCE_PATH" "$SCRIPT_PATH"
         chmod +x "$SCRIPT_PATH"
     fi
@@ -46,7 +45,7 @@ setup_environment() {
 
 # Node.js 环境准备
 install_node() {
-    echo -e "\n--- 检查和安装 Node.js 环境 ---"
+    echo -e "\n--- ▶️ 检查和安装 Node.js 环境 ---"
     if command -v node >/dev/null 2>&1; then
         CURRENT_NODE_VERSION=$(node -v | sed 's/v//')
         echo "✅ Node.js 已安装，版本: ${CURRENT_NODE_VERSION}"
@@ -58,7 +57,7 @@ install_node() {
         . /etc/os-release
         OS=$ID
     else
-        echo "🚨 无法识别系统类型，请手动安装 Node.js。"
+        echo "⚠️ 无法识别系统类型，请手动安装 Node.js"
         exit 1
     fi
 
@@ -76,7 +75,7 @@ install_node() {
             apk add --no-cache nodejs-current npm
             ;;
         *)
-            echo "🚨 系统 ${OS} 不支持自动安装 Node.js，请手动安装"
+            echo "⚠️ 系统 ${OS} 不支持自动安装 Node.js，请手动安装"
             exit 1
             ;;
     esac
@@ -85,19 +84,19 @@ install_node() {
         NODE_VERSION=$(node -v | sed 's/v//')
         echo "🎉 Node.js 安装成功！版本: ${NODE_VERSION}"
     else
-        echo "❌ Node.js 安装失败，退出。"
+        echo "❌ Node.js 安装失败，退出..."
         exit 1
     fi
 }
 
 # Node.js 依赖安装
 install_deps() {
-    echo -e "\n--- 检查和安装 Node.js 依赖: ${TARGET_MODULE} ---"
+    echo -e "\n--- ▶️ 检查和安装 Node.js 依赖: ${TARGET_MODULE} ---"
     if [ ! -d "node_modules" ] || ! npm list "${TARGET_MODULE}" --depth=0 >/dev/null 2>&1; then
-        echo "正在安装/重新安装 ${TARGET_MODULE}..."
+        echo "▶️ 正在安装/重新安装 ${TARGET_MODULE}..."
         npm install "${TARGET_MODULE}"
     else
-        echo "${TARGET_MODULE} 依赖已安装且版本匹配，跳过 npm install"
+        echo "🎉 ${TARGET_MODULE} 已安装且版本匹配，跳过..."
     fi
 }
 
@@ -105,9 +104,9 @@ install_deps() {
 create_service() {
     define_vars # 变量赋值
     
-    echo -e "\n--- 配置并重启服务 ---"
+    echo -e "\n--- ▶️ 配置并重启服务 ---"
     if command -v rc-update >/dev/null 2>&1; then
-        echo "ℹ️ 检测到 OpenRC 系统，配置 OpenRC 服务文件: ${OPENRC_SERVICE_FILE}"
+        echo "▶️ 检测到 OpenRC 系统，配置 OpenRC 服务文件: ${OPENRC_SERVICE_FILE}"
         cat > "$OPENRC_SERVICE_FILE" << EOF
 #!/sbin/openrc-run
 
@@ -136,14 +135,14 @@ start_pre() {
 }
 EOF
         chmod +x "$OPENRC_SERVICE_FILE"
-        echo "✅ OpenRC 服务文件创建成功。"
+        echo "✅ OpenRC 服务文件创建成功"
         
         rc-service "${SERVICE_NAME}" stop 2>/dev/null || true
         rc-update add "${SERVICE_NAME}" default 2>/dev/null || true
         rc-service "${SERVICE_NAME}" start
         echo "🎉 服务安装并启动成功！请检查状态：rc-service ${SERVICE_NAME} status"
     else
-        echo "ℹ️ 检测到 Systemd 系统，配置 Systemd 服务文件: ${SERVICE_FILE}"
+        echo "▶️ 检测到 Systemd 系统，配置 Systemd 服务文件: ${SERVICE_FILE}"
         cat > "$SERVICE_FILE" << EOF
 [Unit]
 Description=Auto-configured NodeJS Argo Tunnel Service (Simplified)
@@ -174,7 +173,7 @@ RestartSec=5s
 [Install]
 WantedBy=multi-user.target
 EOF
-        echo "✅ Systemd 服务文件创建成功。"
+        echo "✅ Systemd 服务文件创建成功"
         systemctl daemon-reload
         systemctl enable "${SERVICE_NAME}.service"
         systemctl restart "${SERVICE_NAME}.service" # 始终重启，确保新配置生效
@@ -187,10 +186,10 @@ EOF
 if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     setup_environment # 设置环境和权限
     install_node # 安装 Node.js
-    install_deps # 安装依赖
+    install_deps # 安装npm包 nodejs-argo
     create_service # 创建/重启服务
     
-    echo -e "\n--- 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2
+    echo -e "\n--- ▶️ 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2
     MAX_WAIT=30
     WAIT_INTERVAL=3
     
@@ -208,12 +207,12 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
         cat "${SUB_FILE}"
         echo -e "\n-----------------------------\n"
     else
-        echo "❌ 警告：未在预期时间内找到节点信息文件 ${SUB_FILE}。"
+        echo "❌ 警告：未在预期时间内找到节点信息文件 ${SUB_FILE}"
         echo "⚠️ 请稍后手动通过 SSH 连接检查：cat ${SUB_FILE}"
     fi
     
     exit 0 # 安装模式结束，退出。
 fi
 
-echo -e "\n--- 正在以服务模式启动核心进程 ---"
+echo -e "\n--- ▶️ 正在以服务模式启动核心进程 ---"
 npx "${TARGET_MODULE}"
