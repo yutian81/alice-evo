@@ -74,6 +74,8 @@ escape_html() {
     echo "$text"
 }
 
+# --- 3. 核心函数 ---
+
 # 获取用户信息
 get_account_username() {
     echo "▶️ 正在尝试获取 Alice 账户用户名..." >&2
@@ -329,7 +331,7 @@ ssh_and_run_script() {
     fi
 }
 
-# --- 4. 主函数 ---
+# --- 4. 主执行逻辑 ---
 main() {
     check_token_and_depend  # 检查 Alice API 令牌和依赖项
 
