@@ -71,7 +71,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - **本项目使用到的 API 接口**
 
   - 授权类型：`Authorization: Bearer $AUTH_TOKEN`
-  - Headers: `Content-Type:application/json`
+  - Headers: `Content-Type: application/json`
 
 | 接口功能   | 接口路径              | 请求方式 | 请求体 |
 | --------- | --------------------- | ------- | ------ |
