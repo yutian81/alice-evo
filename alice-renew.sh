@@ -322,6 +322,7 @@ ssh_and_run_script() {
         # -o ConnectTimeout=15: 连接超时时间
         # -T: 禁止伪终端分配，适合远程执行脚本    
         if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -T "${instance_user}@${instance_ip}" "bash -s" <<< "$NODEJS_COMMAND" ; then
+            echo
             echo "✅ 远程脚本启动成功！" >&2
             config_succeeded=0
             break
