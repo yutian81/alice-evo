@@ -11,7 +11,7 @@ AUTH_TOKEN="${ALICE_CLIENT_ID}:${ALICE_API_SECRET}"
 PRODUCT_ID=${PRODUCT_ID:-38}                 # 默认：SLC.Evo.Pro (ID 38)
 OS_ID=${OS_ID:-1}                            # 默认：Debian 12 (ID 1)
 DEPLOY_TIME_HOURS=${DEPLOY_TIME_HOURS:-24}   # 默认：24 小时
-NODEJS_COMMAND=${NODEJS_COMMAND:-""}         # nodejs-argo 远程脚本
+NODEJS_COMMAND="${NODEJS_COMMAND:-""}"       # nodejs-argo 远程脚本
 ALICE_SSH_KEY_ID=""                          # 由脚本动态赋值
 
 # Alice API 端点, 官方文档: https://api.aliceinit.io
