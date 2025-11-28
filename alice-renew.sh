@@ -346,7 +346,7 @@ main() {
     if [ "$GET_USER_STATUS" -eq 0 ] && [ -n "$USER_NAME" ]; then
         ALICE_ACCOUNT_USER="$USER_NAME"
     else
-        echo "⚠️ 获取 Alice 用户名失败, 将使用 action secret 传入的值: ${ALICE_ACCOUNT_USER}" >&2
+        echo "⚠️ 获取 Alice 用户名失败, 将使用 action secret 变量值: ${ALICE_ACCOUNT_USER}" >&2
         echo "⚠️ 如果 action secret 未设置该变量, 则该变量为空值" >&2
     fi
     ALICE_SSH_HOST="${ALICE_ACCOUNT_USER}.evo.host.aliceinit.dev"
@@ -356,8 +356,8 @@ main() {
     ALICE_SSH_KEY_ID=$(get_ssh_key_id) 
     GET_KEY_STATUS=$?
     if [ "$GET_KEY_STATUS" -ne 0 ]; then
-        echo "⚠️ 警告：无法获取 SSH Key ID。SSH 将以密码连接" >&2
-        echo "⚠️ 你需要使用实例默认生成的密码登录" >&2
+        echo "⚠️ 获取 SSH Key ID失败, 需以密码连接 SSH" >&2
+        echo "⚠️ 你也可以手动连接新实例 SSH 并执行 nodejs-argo 脚本" >&2
         ALICE_SSH_KEY_ID="" 
     fi
 
