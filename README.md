@@ -15,6 +15,17 @@ ARGO_AUTH=eyJhIjoixxxxxx \
 ./vpsnpm.sh
 ```
 
+或者
+```bash
+curl -Ls "https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh" | \
+UUID=822fb34f-af37-445f-8c05-ae35d5423b34 \
+NEZHA_SERVER=nezha.example.com \
+NEZHA_KEY=abcd1234 \
+ARGO_DOMAIN=myargo.site \
+ARGO_AUTH=eyJhIjoixxxxxx \
+bash -s
+```
+
 一键卸载
 
 ```bash
