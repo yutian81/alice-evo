@@ -46,7 +46,7 @@ setup_environment() {
 
 # Node.js 环境准备
 install_node() {
-    echo "--- 检查和安装 Node.js 环境 ---"
+    echo -e "\n--- 检查和安装 Node.js 环境 ---"
     if command -v node >/dev/null 2>&1; then
         CURRENT_NODE_VERSION=$(node -v | sed 's/v//')
         echo "✅ Node.js 已安装，版本: ${CURRENT_NODE_VERSION}"
@@ -92,7 +92,7 @@ install_node() {
 
 # Node.js 依赖安装
 install_deps() {
-    echo "--- 检查和安装 Node.js 依赖: ${TARGET_MODULE} ---"
+    echo -e "\n--- 检查和安装 Node.js 依赖: ${TARGET_MODULE} ---"
     if [ ! -d "node_modules" ] || ! npm list "${TARGET_MODULE}" --depth=0 >/dev/null 2>&1; then
         echo "正在安装/重新安装 ${TARGET_MODULE}..."
         npm install "${TARGET_MODULE}"
@@ -105,7 +105,7 @@ install_deps() {
 create_service() {
     define_vars # 变量赋值
     
-    echo "--- 配置并重启服务 ---"
+    echo -e "\n--- 配置并重启服务 ---"
     if command -v rc-update >/dev/null 2>&1; then
         echo "ℹ️ 检测到 OpenRC 系统，配置 OpenRC 服务文件: ${OPENRC_SERVICE_FILE}"
         cat > "$OPENRC_SERVICE_FILE" << EOF
@@ -190,7 +190,7 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     install_deps # 安装依赖
     create_service # 创建/重启服务
     
-    echo "--- 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2
+    echo "\n--- 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2
     MAX_WAIT=30
     WAIT_INTERVAL=3
     
@@ -206,7 +206,7 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     echo -e "\n----- 🚀 节点信息 (Base64) -----"
     if [ -f "${SUB_FILE}" ]; then
         cat "${SUB_FILE}"
-        echo -e "\n-----------------------------\n"
+        echo -e "-----------------------------\n"
     else
         echo "❌ 警告：未在预期时间内找到节点信息文件 ${SUB_FILE}。"
         echo "⚠️ 请稍后手动通过 SSH 连接检查：cat ${SUB_FILE}"
@@ -215,5 +215,5 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     exit 0 # 安装模式结束，退出。
 fi
 
-echo "--- 正在以服务模式启动核心进程 ---"
+echo -e "\n--- 正在以服务模式启动核心进程 ---"
 npx "${TARGET_MODULE}"
