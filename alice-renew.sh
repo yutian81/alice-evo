@@ -382,7 +382,7 @@ main() {
     echo "🚀 阶段二：部署新实例"
     echo "======================================"
     echo "▶️ 正在部署新实例，实例方案..." >&2
-    echo "💡 PRODUCT_ID: ${PRODUCT_ID}, OS_ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h..." >&2
+    echo "💡 PRODUCT_ID: ${PRODUCT_ID}, OS_ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h" >&2
 
     # 捕获 ID, IP, USER, PASS
     NEW_INSTANCE_INFO=$(deploy_instance)
