@@ -347,12 +347,12 @@ main() {
     GET_USER_STATUS=$?
     if [ "$GET_USER_STATUS" -eq 0 ]; then
         ALICE_ACCOUNT_USER="$USER_NAME"
-        echo "ℹ️ ALICE_ACCOUNT_USER 设置为: $ALICE_ACCOUNT_USER" >&2
     else
-        echo "⚠️ 警告：无法获取 Alice 账户用户名。SSH 连接将完全依赖于 API 返回的 IP 地址" >&2
         ALICE_ACCOUNT_USER=""
+        echo "⚠️ 警告：无法获取 Alice 账户用户名。SSH 将以 IP 地址连接" >&2
     fi
     ALICE_SSH_HOST="${ALICE_ACCOUNT_USER}.evo.host.aliceinit.dev"
+    echo "▶️ ALICE_SSH_HOST: ${ALICE_SSH_HOST}" >&2
 
     # 自动获取 SSH Key ID 不再依赖 ALICE_SSH_KEY_NAME 参数
     ALICE_SSH_KEY_ID=$(get_ssh_key_id) 
