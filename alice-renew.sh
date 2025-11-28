@@ -262,14 +262,13 @@ ${DETAILS_TEXT}
 ========================
 EOF
         )
-        send_tg_notification "$TG_SUCCESS_MSG"
-
         # 输出到终端
         DETAILS_TEXT_LOG=$(echo "$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g')
         echo "实例状态: ✅ 创建成功" >&2
         echo "----- 新实例详情 -----" >&2
         echo "$DETAILS_TEXT_LOG" >&2
         echo "--------------------" >&2
+        send_tg_notification "$TG_SUCCESS_MSG"
         
         # 返回新实例 ID IP USER PASS 以供后续使用
         echo "$NEW_ID $NEW_IP $NEW_USER $NEW_PASS"
@@ -286,12 +285,11 @@ API状态: ${API_STATUS}
 请检查账户权限或 API 配置。
 EOF
         )
-        send_tg_notification "$TG_FAIL_MSG"
-
         echo "实例状态: ❌ 创建失败" >&2
         echo "API状态: $API_STATUS" >&2
         echo "错误信息: $MESSAGE" >&2
         echo "$RESPONSE" | jq . >&2
+        send_tg_notification "$TG_FAIL_MSG"
         exit 1
     fi
 }
@@ -306,8 +304,7 @@ ssh_and_run_script() {
 
     # 循环尝试连接 SSH
     for ((i=1; i<=max_retries; i++)); do
-        echo "尝试 SSH 连接和执行 (第 $i/$max_retries 次, 等待 ${wait_time} 秒)..." >&2
-        
+        echo "尝试 SSH 连接和执行 (第 $i/$max_retries 次, 等待 ${wait_time} 秒)..." >&2    
         # SSH 选项说明:
         # -o StrictHostKeyChecking=no: 避免首次连接的密钥确认提示
         # -o ConnectTimeout=15: 连接超时时间
