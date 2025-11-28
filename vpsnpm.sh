@@ -190,7 +190,7 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     install_deps # 安装依赖
     create_service # 创建/重启服务
     
-    echo "\n--- 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2
+    echo -e "\n--- 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2
     MAX_WAIT=30
     WAIT_INTERVAL=3
     
@@ -206,7 +206,7 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     echo -e "\n----- 🚀 节点信息 (Base64) -----"
     if [ -f "${SUB_FILE}" ]; then
         cat "${SUB_FILE}"
-        echo -e "-----------------------------\n"
+        echo -e "\n-----------------------------\n"
     else
         echo "❌ 警告：未在预期时间内找到节点信息文件 ${SUB_FILE}。"
         echo "⚠️ 请稍后手动通过 SSH 连接检查：cat ${SUB_FILE}"
