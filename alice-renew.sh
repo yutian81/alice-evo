@@ -89,7 +89,6 @@ get_account_username() {
     fi
 
     local username=$(echo "$USER_RESPONSE" | jq -r '.data.username // empty')
-
     if [ -z "$username" ]; then
         echo "❌ 错误：从 API 响应中未找到 'username' 字段" >&2
         return 2
@@ -115,7 +114,6 @@ get_ssh_key_id() {
     # 提取数组中第一个元素的 ID 和名称
     local key_id=$(echo "$SSH_KEY_RESPONSE" | jq -r '.data[0].id // empty')
     local key_name=$(echo "$SSH_KEY_RESPONSE" | jq -r '.data[0].name // "未知"')
-
     if [ -z "$key_id" ]; then
         echo "❌ 错误：SSH Key 列表为空。请确保您已在 Alice 后台添加了公钥。" >&2
         return 2
@@ -136,12 +134,13 @@ get_instance_ids() {
         echo "❌ 获取实例列表失败 (API状态: $API_STATUS)" >&2
         return 1
     fi
-    INSTANCE_IDS=$(echo "$LIST_RESPONSE" | jq -r '.data[].id // empty' | tr '\n' ' ')
     
+    INSTANCE_IDS=$(echo "$LIST_RESPONSE" | jq -r '.data[].id // empty' | tr '\n' ' ')
     if [ -z "$INSTANCE_IDS" ]; then
         echo "⚠️ 实例列表为空或未找到有效ID" >&2
         return 2
     fi
+    
     echo "✅ 成功获取到以下实例, ID：$INSTANCE_IDS" >&2
     echo "$INSTANCE_IDS"
     return 0
@@ -162,7 +161,6 @@ destroy_instance() {
 
     API_STATUS=$(echo "$RESPONSE" | jq -r '.code // empty')
     MESSAGE=$(echo "$RESPONSE" | jq -r '.message // "无消息"')
-
     if [ "$API_STATUS" == "200" ]; then
         echo "实例状态: ✅ 销毁成功" >&2
         echo "消息: $MESSAGE" >&2
@@ -201,7 +199,6 @@ deploy_instance() {
 
     RESPONSE=$(eval "$CURL_CMD")
     CURL_STATUS=$?
-
     if [ "$CURL_STATUS" -ne 0 ]; then
         echo "❌ 实例创建失败 (cURL 连接错误: $CURL_STATUS)" >&2
         exit 1
@@ -376,6 +373,7 @@ main() {
             fi
         done
         echo "✅ 成功销毁 ${DESTROY_COUNT} 个，❌ 失败 ${DESTROY_FAIL} 个"
+    
     elif [ "$GET_ID_STATUS" -eq 2 ]; then
         echo "⚠️ 未发现任何实例，跳过销毁阶段"
     else
@@ -392,7 +390,6 @@ main() {
     # 捕获 ID, IP, USER, PASS
     NEW_INSTANCE_INFO=$(deploy_instance)
     DEPLOY_STATUS=$?
-
     if [ "$DEPLOY_STATUS" -ne 0 ]; then
         echo "❌ 新实例部署失败，请检查账户权限和配置"
         exit 1
