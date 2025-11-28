@@ -24,7 +24,7 @@ define_vars() {
     export NAME=${NAME:-'NPM'}
 }
 
-# 权限和工作目录设置
+# 权限、工作目录设置及启动脚本下载
 setup_environment() {
     # 权限检查：允许非 root 用户执行已安装的服务脚本，但首次安装必须是 root
     if [ "$EUID" -ne 0 ] && [ ! -f "$SERVICE_FILE" ] && [ ! -f "$OPENRC_SERVICE_FILE" ]; then
@@ -36,11 +36,13 @@ setup_environment() {
     mkdir -p "${SERVICE_DIR}"
     cd "${SERVICE_DIR}" || { echo "无法进入目录 ${SERVICE_DIR}，退出。"; exit 1; }
 
-    if [[ "$SCRIPT_SOURCE_PATH" != "$SCRIPT_PATH" ]]; then
-        echo "▶️ 将脚本复制到目标路径: ${SCRIPT_PATH}"
-        cp "$SCRIPT_SOURCE_PATH" "$SCRIPT_PATH"
-        chmod +x "$SCRIPT_PATH"
-    fi
+    SCRIPT_URL="https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh"
+    curl -o "$SCRIPT_PATH" -Ls "$SCRIPT_URL" && \
+    chmod +x "$SCRIPT_PATH" && \
+    echo "✅ 脚本保存成功，路径: $SCRIPT_PATH" >&2 || {
+       echo "❌ 脚本下载/保存/权限设置失败，退出..." >&2
+       exit 1
+    }
 }
 
 # Node.js 环境准备
