@@ -1,26 +1,4 @@
-#!/bin/bash
-
-# --- 1. 配置信息 (从环境变量获取) ---
-
-# 鉴权变量, 从 https://console.alice.ws/ephemera/evo-cloud 获取
-ALICE_CLIENT_ID="${ALICE_CLIENT_ID}"
-ALICE_API_SECRET="${ALICE_API_SECRET}"
-AUTH_TOKEN="${ALICE_CLIENT_ID}:${ALICE_API_SECRET}"
-
-# 实例部署配置
-PRODUCT_ID=${PRODUCT_ID:-38}                 # 默认：SLC.Evo.Pro (ID 38)
-OS_ID=${OS_ID:-1}                            # 默认：Debian 12 (ID 1)
-DEPLOY_TIME_HOURS=${DEPLOY_TIME_HOURS:-24}   # 默认：24 小时
-NODEJS_COMMAND="${NODEJS_COMMAND:-""}"       # nodejs-argo 远程脚本
-ALICE_SSH_KEY_ID=""                          # 由脚本动态赋值
-
-# Alice API 端点, 官方文档: https://api.aliceinit.io
-API_BASE_URL="https://app.alice.ws/cli/v1"
-API_DESTROY_URL="${API_BASE_URL}/evo/instances"          # DELETE 需要附加实例 ID
-API_DEPLOY_URL="${API_BASE_URL}/evo/instances/deploy"    # POST 部署实例
-API_LIST_URL="${API_BASE_URL}/evo/instances"             # GET 实例列表
-API_USER_URL="${API_BASE_URL}/account/profile"           # GET 用户信息
-API_SSH_KEY_URL="${API_BASE_URL}/account/ssh-keys"       # GET SSH 公钥列表
+E_URL}/account/ssh-keys"       # GET SSH 公钥列表
 
 # Telegram 通知配置 (需要从 GitHub action secrets 传入)
 TG_BOT_TOKEN="${TG_BOT_TOKEN}"
@@ -148,7 +126,6 @@ get_instance_ids() {
 # 销毁实例
 destroy_instance() {
     local instance_id="$1"
-    echo -e "\n🔥 正在销毁实例, ID: ${instance_id}..." >&2
     
     RESPONSE=$(curl -L -s -X DELETE "$API_DESTROY_URL/${instance_id}" \
         -H "Authorization: Bearer $AUTH_TOKEN")
@@ -177,8 +154,6 @@ destroy_instance() {
 
 # 创建实例（默认时长24小时）
 deploy_instance() {
-    echo -e "\n🚀 正在部署新实例 (PRODUCT_ID: ${PRODUCT_ID}, OS_ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h...)" >&2
-
     # 使用 jq 构造 JSON 负载
     PAYLOAD=$(jq -n \
         --arg product_id "$PRODUCT_ID" \
@@ -308,10 +283,6 @@ ssh_and_run_script() {
     local wait_time=15
     local config_succeeded=1
 
-    echo -e "\n▶️ 正在连接 SSH 并执行远程脚本..." >&2
-    echo "💡 目标: ${instance_user}@${instance_ip}:22" >&2
-    echo "🔑 请确保 SSH 私钥已通过 webfactory/ssh-agent Action 注入" >&2
-    
     # 循环尝试连接 SSH
     for ((i=1; i<=max_retries; i++)); do
         echo "尝试 SSH 连接和执行 (第 $i/$max_retries 次, 等待 ${wait_time} 秒)..." >&2
@@ -370,6 +341,7 @@ main() {
     DESTROY_COUNT=0
     DESTROY_FAIL=0
 
+    echo "▶️ 正在销毁实例, ID: $ALL_INSTANCE_IDS..." >&2
     if [ "$GET_ID_STATUS" -eq 0 ]; then
         read -ra ID_ARRAY <<< "$ALL_INSTANCE_IDS"
         for id in "${ID_ARRAY[@]}"; do
@@ -379,7 +351,7 @@ main() {
                 DESTROY_FAIL=$((DESTROY_FAIL + 1))
             fi
         done
-        echo "✅ 成功销毁 ${DESTROY_COUNT} 个，失败 ${DESTROY_FAIL} 个"
+        echo "✅ 成功销毁 ${DESTROY_COUNT} 个，❌ 失败 ${DESTROY_FAIL} 个"
     elif [ "$GET_ID_STATUS" -eq 2 ]; then
         echo "⚠️ 未发现任何实例，跳过销毁阶段"
     else
@@ -390,6 +362,8 @@ main() {
     echo -e "\n======================================"
     echo "🚀 阶段二：部署新实例"
     echo "======================================"
+    echo "▶️ 正在部署新实例，实例方案..." >&2
+    echo "💡 PRODUCT_ID: ${PRODUCT_ID}, OS_ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h..." >&2
 
     # 捕获 ID, IP, USER, PASS
     NEW_INSTANCE_INFO=$(deploy_instance)
@@ -400,10 +374,13 @@ main() {
         exit 1
     fi
 
-    # 解析 deploy_instance 的返回值
+    # SSH执行远程脚本
+    echo -e "\n======================================"
+    echo "🚀 阶段三：连接 SSH 执行远程脚本"
+    echo "======================================"
+    echo "▶️ 正在连接 SSH 并执行远程脚本..." >&2
+
     read -r NEW_ID NEW_IP NEW_USER NEW_PASS<<< "$NEW_INSTANCE_INFO"
-    
-    # 确定最终的 SSH 连接目标：优先使用 API 返回的 IP，否则使用预设 Hostname
     TARGET_IP=""
     if [ -n "$NEW_IP" ]; then
         TARGET_IP="$NEW_IP"
@@ -414,11 +391,9 @@ main() {
         NEW_USER="root" # 默认用户名
     fi
 
-    # SSH执行远程脚本
-    echo -e "\n======================================"
-    echo "🚀 阶段三：连接 SSH 执行远程脚本"
-    echo "======================================"
-
+    echo "💡 SSH 目标: $NEW_USER@$TARGET_IP:22" >&2
+    echo "🔑 请确保 SSH 私钥已通过 webfactory/ssh-agent Action 注入" >&2
+    
     local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
         echo -e "🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功"
