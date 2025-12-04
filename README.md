@@ -36,15 +36,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - **ALICE_CLIENT_ID**
 - **ALICE_API_SECRET**
 - **ALICE_SSH_KEY**：私钥内容
-- **NODEJS_COMMAND**: nodejs-argo远程脚本，必须包含 `ARGO_DOMAIN` 和 `ARGO_AUTH` 两个外置变量，以确保节点保活，内容示例:
-```bash
-UUID=822fb34f-af37-445f-8c05-ae35d5423b34 \
-NEZHA_SERVER=nezha.example.com \
-NEZHA_KEY=abcd1234 \
-ARGO_DOMAIN=myargo.site \
-ARGO_AUTH=eyJhIjoixxxxxx \
-/opt/nodejs-argo/vpsnpm.sh
-```
+- **NODEJS_COMMAND**: nodejs-argo远程脚本，必须包含 `ARGO_DOMAIN` 和 `ARGO_AUTH` 两个外置变量，以确保节点保活，内容即为上述一键节点
 
 ### 可选变量
 - ALICE_ACCOUNT_USER：alice账号用户名
