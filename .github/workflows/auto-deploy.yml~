@@ -42,11 +42,10 @@ jobs:
         env:
           ALICE_CLIENT_ID: ${{ secrets.ALICE_CLIENT_ID }}
           ALICE_API_SECRET: ${{ secrets.ALICE_API_SECRET }}
-          ALICE_ACCOUNT_USER: ${{ secrets.ALICE_ACCOUNT_USER }}
-          NODEJS_COMMAND: ${{ secrets.NODEJS_COMMAND }}
+          # ALICE_ACCOUNT_USER: ${{ secrets.ALICE_ACCOUNT_USER }}
+          NODEJS_COMMAND: ${{ vars.NODEJS_COMMAND }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
           chmod +x alice-renew.sh
           ./alice-renew.sh
-
