@@ -329,7 +329,7 @@ ssh_and_run_script() {
 main() {
     check_token_and_depend  # 检查 Alice API 令牌和依赖项
 
-    # 自动获取 ALICE_ACCOUNT_USER 如果它未设置
+    # 自动获取 ALICE_ACCOUNT_USER
     USER_NAME=$(get_account_username)
     GET_USER_STATUS=$?
     if [ "$GET_USER_STATUS" -eq 0 ] && [ -n "$USER_NAME" ]; then
@@ -359,7 +359,7 @@ main() {
     DESTROY_COUNT=0
     DESTROY_FAIL=0
 
-    echo "▶️ 正在销毁实例, ID: $ALL_INSTANCE_IDS..." >&2
+    echo "▶️ 正在销毁实例, ID: $ALL_INSTANCE_IDS" >&2
     if [ "$GET_ID_STATUS" -eq 0 ]; then
         read -ra ID_ARRAY <<< "$ALL_INSTANCE_IDS"
         for id in "${ID_ARRAY[@]}"; do
@@ -381,7 +381,8 @@ main() {
     echo -e "\n======================================"
     echo "🚀 阶段二：部署新实例"
     echo "======================================"
-    echo "▶️ 正在部署新实例，实例方案..." >&2
+    
+    echo "▶️ 正在部署新实例，实例方案:" >&2
     echo "💡 PRODUCT_ID: ${PRODUCT_ID}, OS_ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h" >&2
 
     # 捕获 ID, IP, USER, PASS
@@ -396,29 +397,28 @@ main() {
     echo -e "\n======================================"
     echo "🚀 阶段三：连接 SSH 执行远程脚本"
     echo "======================================"
-    echo "▶️ 正在连接 SSH 并执行远程脚本..." >&2
-
-    read -r NEW_ID NEW_IP NEW_USER NEW_PASS<<< "$NEW_INSTANCE_INFO"
-    TARGET_IP=""
-    if [ -n "$NEW_IP" ]; then
-        TARGET_IP="$NEW_IP"
-    else
-        TARGET_IP="${ALICE_SSH_HOST}" # 如果 IP 为空，则回退到预设的主机名
-    fi
-    if [ -z "$NEW_USER" ]; then
-        NEW_USER="root" # 默认用户名
-    fi
-
+    
+    read -r NEW_ID NEW_IP NEW_USER NEW_PASS <<< "$NEW_INSTANCE_INFO"
+    TARGET_IP="${NEW_IP:-$ALICE_SSH_HOST}"
+    NEW_USER="${NEW_USER:-root}"
     echo "💡 SSH 目标: $NEW_USER@$TARGET_IP:22" >&2
     echo "🔑 请确保 SSH 私钥已通过 webfactory/ssh-agent Action 注入" >&2
+    
+    echo "等待系统完全启动："
+    for ((i=20; i>0; i-=5)); do
+      echo "剩余 $i 秒..."
+      sleep 5
+    done
+    echo "系统已启动完成"
+    echo "▶️ 正在连接 SSH 并执行远程脚本" >&2
     
     local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
         echo -e "🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功"
-        echo -e "🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取节点信息"
+        echo -e "🎉 如未输出节点信息，可手动连接SSH，执行 cat "${remote_file}" 命令获取"
         echo -e "🎉 SSH连接信息：IP: ${TARGET_IP}, 端口: 22, 用户名: ${NEW_USER}, 密码: ${NEW_PASS}"
     else
-        echo "❌ 远程配置脚本执行失败。实例 ${NEW_ID} 已创建，请登录 ssh 检查"
+        echo "❌ 远程脚本执行失败。但实例 ${NEW_ID} 已创建，请登录 ssh 检查"
         exit 1
     fi
 }
