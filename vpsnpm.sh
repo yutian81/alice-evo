@@ -203,9 +203,9 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     install_deps # 安装npm包 nodejs-argo
     create_service # 创建/重启服务
     
-    echo -e "\n--- ▶️ 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2
-    MAX_WAIT=30
-    WAIT_INTERVAL=3
+    echo -e "\n--- ▶️ 等待核心进程写入节点信息 (最多等待 ${MAX_WAIT} 秒) ---" >&2
+    MAX_WAIT=60
+    WAIT_INTERVAL=10
     
     for ((i=0; i < MAX_WAIT; i+=WAIT_INTERVAL)); do
         if [ -f "${SUB_FILE}" ]; then
