@@ -164,7 +164,7 @@ Environment=CFIP=${CFIP}
 Environment=NAME=${NAME}
 
 WorkingDirectory=${SERVICE_DIR}
-ExecStart=${SCRIPT_PATH}
+ExecStart="npx ${TARGET_MODULE}"
 StandardOutput=journal
 StandardError=journal
 Restart=always
