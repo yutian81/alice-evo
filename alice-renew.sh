@@ -304,13 +304,21 @@ ssh_and_run_script() {
 
     # 循环尝试连接 SSH
     for ((i=1; i<=max_retries; i++)); do
-        echo "尝试 SSH 连接和执行 (第 $i/$max_retries 次, 等待 ${wait_time} 秒)..." >&2    
-        # SSH 选项说明:
-        # -o StrictHostKeyChecking=no: 避免首次连接的密钥确认提示
-        # -o ConnectTimeout=15: 连接超时时间
-        # -T: 禁止伪终端分配，适合远程执行脚本    
-        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -T "${instance_user}@${instance_ip}" "bash -s" <<< "$NODEJS_COMMAND" ; then
-            echo -e "\n🎉 远程脚本启动成功！" >&2
+        echo "尝试 SSH 连接和执行 (第 $i/$max_retries 次, 等待 ${wait_time} 秒)..." >&2       
+        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -T "${instance_user}@${instance_ip}" "bash -s" << EOF
+            echo "▶️ [Remote] 开始清理系统锁并检查环境..."
+            sudo killall apt apt-get 2>/dev/null
+            sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
+            sudo dpkg --configure -a
+            if ! command -v curl >/dev/null 2>&1; then
+                echo "▶️ [Remote] 正在安装 curl..."
+                sudo apt-get update && sudo apt-get install -y curl
+            fi
+            echo "▶️ [Remote] 正在执行远程部署指令..."
+            "${NODEJS_COMMAND}"
+        EOF
+        then
+            echo -e "\n🎉 远程脚本启动成功" >&2
             config_succeeded=0
             break
         else
@@ -318,11 +326,6 @@ ssh_and_run_script() {
             sleep "$wait_time"
         fi
     done
-    
-    if [ "$config_succeeded" -ne 0 ]; then
-        echo "❌ 致命错误：SSH 连接或脚本启动在 ${max_retries} 次尝试后失败" >&2
-        return 1
-    fi
 }
 
 # --- 4. 主执行逻辑 ---
