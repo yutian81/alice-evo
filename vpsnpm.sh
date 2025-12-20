@@ -10,6 +10,20 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 OPENRC_SERVICE_FILE="/etc/init.d/${SERVICE_NAME}"
 TARGET_MODULE="nodejs-argo"
 SYSTEM_USER="root"
+MAX_WAIT=30
+WAIT_INTERVAL=3
+
+# 清理系统锁
+clean_sysblock() {
+    echo "▶️ 正在检查并清理系统软件包管理器锁"
+    sudo killall apt apt-get 2>/dev/null
+    sudo rm -f /var/lib/apt/lists/lock
+    sudo rm -f /var/lib/dpkg/lock
+    sudo rm -f /var/lib/dpkg/lock-frontend
+    sudo rm -f /var/cache/apt/archives/lock
+    sudo dpkg --configure -a 2>/dev/null
+    echo "✅ 系统锁清理完成"
+}
 
 # 变量定义和赋值
 define_vars() {
@@ -198,15 +212,13 @@ EOF
 
 # 主执行逻辑
 if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
+    clean_sysblock
     setup_environment # 设置环境和权限
     install_node # 安装 Node.js
     install_deps # 安装npm包 nodejs-argo
     create_service # 创建/重启服务
     
-    echo -e "\n--- ▶️ 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2
-    MAX_WAIT=30
-    WAIT_INTERVAL=3
-    
+    echo -e "\n--- ▶️ 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2  
     for ((i=0; i < MAX_WAIT; i+=WAIT_INTERVAL)); do
         if [ -f "${SUB_FILE}" ]; then
             echo "✅ 节点信息文件已找到！" >&2
