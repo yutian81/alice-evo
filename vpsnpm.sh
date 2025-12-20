@@ -5,7 +5,7 @@ SERVICE_NAME="nodejs-argo"
 SERVICE_DIR="/opt/${SERVICE_NAME}"
 SCRIPT_PATH="${SERVICE_DIR}/vpsnpm.sh"
 SUB_FILE="${SERVICE_DIR}/tmp/sub.txt"
-SCRIPT_SOURCE_PATH=$(readlink -f "$0")
+SCRIPT_URL="https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 OPENRC_SERVICE_FILE="/etc/init.d/${SERVICE_NAME}"
 TARGET_MODULE="nodejs-argo"
@@ -24,7 +24,21 @@ define_vars() {
     export NAME=${NAME:-'NPM'}
 }
 
-# 权限和工作目录设置
+# 封装下载函数
+download_script() {
+    local DOWNLOAD_URL="$1"
+    local TARGET_PATH="$2"
+    
+    echo "▶️ 正在下载脚本并保存"
+    if curl -o "$TARGET_PATH" -Ls "$DOWNLOAD_URL" && chmod +x "$TARGET_PATH"; then
+        echo "✅ 脚本 ${TARGET_PATH} 下载成功并赋权" >&2
+    else
+        echo "❌ 脚本下载/保存/权限设置失败，退出..." >&2
+        exit 1
+    fi
+}
+
+# 权限、工作目录设置及启动脚本下载
 setup_environment() {
     # 权限检查：允许非 root 用户执行已安装的服务脚本，但首次安装必须是 root
     if [ "$EUID" -ne 0 ] && [ ! -f "$SERVICE_FILE" ] && [ ! -f "$OPENRC_SERVICE_FILE" ]; then
@@ -36,10 +50,10 @@ setup_environment() {
     mkdir -p "${SERVICE_DIR}"
     cd "${SERVICE_DIR}" || { echo "无法进入目录 ${SERVICE_DIR}，退出。"; exit 1; }
 
-    if [[ "$SCRIPT_SOURCE_PATH" != "$SCRIPT_PATH" ]]; then
-        echo "▶️ 将脚本复制到目标路径: ${SCRIPT_PATH}"
-        cp "$SCRIPT_SOURCE_PATH" "$SCRIPT_PATH"
-        chmod +x "$SCRIPT_PATH"
+    if [ ! -f "$SCRIPT_PATH" ]; then
+        download_script "$SCRIPT_URL" "$SCRIPT_PATH"
+    else
+        echo "✅ 脚本 $SCRIPT_PATH 已存在，跳过下载..." >&2
     fi
 }
 
@@ -164,7 +178,7 @@ Environment=CFIP=${CFIP}
 Environment=NAME=${NAME}
 
 WorkingDirectory=${SERVICE_DIR}
-ExecStart="npx ${TARGET_MODULE}"
+ExecStart=${SCRIPT_PATH}
 StandardOutput=journal
 StandardError=journal
 Restart=always
