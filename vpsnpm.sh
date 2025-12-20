@@ -4,12 +4,14 @@
 SERVICE_NAME="nodejs-argo"
 SERVICE_DIR="/opt/${SERVICE_NAME}"
 SCRIPT_PATH="${SERVICE_DIR}/vpsnpm.sh"
-SUB_FILE="${SERVICE_DIR}/tmp/sub.txt"
+SUB_FILE="${SERVICE_DIR}/sub.txt"
 SCRIPT_URL="https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 OPENRC_SERVICE_FILE="/etc/init.d/${SERVICE_NAME}"
 TARGET_MODULE="nodejs-argo"
 SYSTEM_USER="root"
+MAX_WAIT=60
+WAIT_INTERVAL=10
 
 # 变量定义和赋值
 define_vars() {
@@ -116,38 +118,39 @@ install_deps() {
 
 # 创建并启动服务 (始终重建/覆盖)
 create_service() {
+    rm -f "${SUB_FILE}" # 清理旧的节点文件
     define_vars # 变量赋值
     
     echo -e "\n--- ▶️ 配置并重启服务 ---"
     if command -v rc-update >/dev/null 2>&1; then
-        echo "▶️ 检测到 OpenRC 系统，配置 OpenRC 服务文件: ${OPENRC_SERVICE_FILE}"
+        echo "▶️ 配置 OpenRC 服务文件: ${OPENRC_SERVICE_FILE}"
         cat > "$OPENRC_SERVICE_FILE" << EOF
 #!/sbin/openrc-run
 
 name="${SERVICE_NAME}"
 description="Auto-configured NodeJS Argo Tunnel Service"
+
+export UUID="${UUID}"
+export NEZHA_SERVER="${NEZHA_SERVER}"
+export NEZHA_PORT="${NEZHA_PORT}"
+export NEZHA_KEY="${NEZHA_KEY}"
+export ARGO_DOMAIN="${ARGO_DOMAIN}"
+export ARGO_AUTH="${ARGO_AUTH}"
+export CFIP="${CFIP}"
+export NAME="${NAME}"
+
 command="/usr/bin/env"
 command_args="bash ${SCRIPT_PATH}"
 command_background="yes"
 directory="${SERVICE_DIR}"
 user="${SYSTEM_USER}"
-
+pidfile="/run/\${RC_SVCNAME}.pid"
 depend() {
     need net
     use dns logger
 }
-
-start_pre() {
-    export UUID="${UUID}"
-    export NEZHA_SERVER="${NEZHA_SERVER}"
-    export NEZHA_PORT="${NEZHA_PORT}"
-    export NEZHA_KEY="${NEZHA_KEY}"
-    export ARGO_DOMAIN="${ARGO_DOMAIN}"
-    export ARGO_AUTH="${ARGO_AUTH}"
-    export CFIP="${CFIP}"
-    export NAME="${NAME}"
-}
 EOF
+
         chmod +x "$OPENRC_SERVICE_FILE"
         echo "✅ OpenRC 服务文件创建成功"
         
@@ -204,9 +207,6 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     create_service # 创建/重启服务
     
     echo -e "\n--- ▶️ 等待核心进程写入节点信息 (最多等待 ${MAX_WAIT} 秒) ---" >&2
-    MAX_WAIT=60
-    WAIT_INTERVAL=10
-    
     for ((i=0; i < MAX_WAIT; i+=WAIT_INTERVAL)); do
         if [ -f "${SUB_FILE}" ]; then
             echo "✅ 节点信息文件已找到！" >&2
