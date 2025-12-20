@@ -5,12 +5,13 @@
 > 支持 Debian | 乌班图 | Alpine
 
 ```bash
-curl -Ls "https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh" -o vpsnpm.sh && chmod +x vpsnpm.sh && \
-UUID="822fb34f-af37-445f-8c05-ae35d5423b34" \
-NEZHA_SERVER="nezha.example.com" \
-NEZHA_KEY="abcd1234" \
-ARGO_DOMAIN="myargo.site" \
-ARGO_AUTH="eyJhIjoixxxxxx" \
+curl -o vpsnpm.sh -Ls "https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh" && \
+chmod +x vpsnpm.sh && \
+UUID=822fb34f-af37-445f-8c05-ae35d5423b34 \
+NEZHA_SERVER=nezha.example.com \
+NEZHA_KEY=abcd1234 \
+ARGO_DOMAIN=myargo.site \
+ARGO_AUTH=eyJhIjoixxxxxx \
 ./vpsnpm.sh
 ```
 
@@ -37,7 +38,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - **ALICE_CLIENT_ID**
 - **ALICE_API_SECRET**
 - **ALICE_SSH_KEY**：私钥内容
-- **NODEJS_COMMAND**: nodejs-argo远程脚本，必须包含 `ARGO_DOMAIN` 和 `ARGO_AUTH` 两个外置变量，以确保节点保活，内容即为上述第二个一键节点
+- **NODEJS_COMMAND**: nodejs-argo远程脚本，必须包含 `ARGO_DOMAIN` 和 `ARGO_AUTH` 两个外置变量，以确保节点保活，内容即为上述第一个一键脚本
 
 ### 可选变量
 - ALICE_ACCOUNT_USER：alice账号用户名
