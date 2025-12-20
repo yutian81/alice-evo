@@ -412,7 +412,7 @@ main() {
     echo "💡 SSH 目标: $NEW_USER@$TARGET_IP:22" >&2
     echo "🔑 请确保 SSH 私钥已通过 webfactory/ssh-agent Action 注入" >&2
     
-    local remote_file="/opt/nodejs-argo/tmp/sub.txt"
+    local remote_file="/opt/nodejs-argo/.npm/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
         echo -e "🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功"
         echo -e "🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取节点信息"
