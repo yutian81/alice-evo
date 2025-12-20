@@ -11,12 +11,13 @@ AUTH_TOKEN="${ALICE_CLIENT_ID}:${ALICE_API_SECRET}"
 PRODUCT_ID=${PRODUCT_ID:-38}                 # 默认：SLC.Evo.Pro (ID 38)
 OS_ID=${OS_ID:-1}                            # 默认：Debian 12 (ID 1)
 DEPLOY_TIME_HOURS=${DEPLOY_TIME_HOURS:-24}   # 默认：24 小时
-NODEJS_COMMAND="${NODEJS_COMMAND:-""}"       # nodejs-argo 远程脚本
-ALICE_SSH_KEY_ID=""                          # 由脚本动态赋值
+ALICE_ACCOUNT_USER="${ALICE_ACCOUNT_USER}"   # 可选：Alice 账户用户名 (如果未设置，将被脚本自动获取)
+ALICE_SSH_KEY_ID=""                          # 将通过脚本获取第一个 Key ID
+NODEJS_COMMAND="${NODEJS_COMMAND}"           # nodejs-argo 远程脚本
 
 # Alice API 端点, 官方文档: https://api.aliceinit.io
 API_BASE_URL="https://app.alice.ws/cli/v1"
-API_DESTROY_URL="${API_BASE_URL}/evo/instances"          # DELETE 删除实例
+API_DESTROY_URL="${API_BASE_URL}/evo/instances"          # DELETE 需要附加实例 ID
 API_DEPLOY_URL="${API_BASE_URL}/evo/instances/deploy"    # POST 部署实例
 API_LIST_URL="${API_BASE_URL}/evo/instances"             # GET 实例列表
 API_USER_URL="${API_BASE_URL}/account/profile"           # GET 用户信息
@@ -74,8 +75,6 @@ escape_html() {
     echo "$text"
 }
 
-# --- 3. 核心函数 ---
-
 # 获取用户信息
 get_account_username() {
     echo "▶️ 正在尝试获取 Alice 账户用户名..." >&2
@@ -89,6 +88,7 @@ get_account_username() {
     fi
 
     local username=$(echo "$USER_RESPONSE" | jq -r '.data.username // empty')
+
     if [ -z "$username" ]; then
         echo "❌ 错误：从 API 响应中未找到 'username' 字段" >&2
         return 2
@@ -114,6 +114,7 @@ get_ssh_key_id() {
     # 提取数组中第一个元素的 ID 和名称
     local key_id=$(echo "$SSH_KEY_RESPONSE" | jq -r '.data[0].id // empty')
     local key_name=$(echo "$SSH_KEY_RESPONSE" | jq -r '.data[0].name // "未知"')
+
     if [ -z "$key_id" ]; then
         echo "❌ 错误：SSH Key 列表为空。请确保您已在 Alice 后台添加了公钥。" >&2
         return 2
@@ -134,13 +135,12 @@ get_instance_ids() {
         echo "❌ 获取实例列表失败 (API状态: $API_STATUS)" >&2
         return 1
     fi
-    
     INSTANCE_IDS=$(echo "$LIST_RESPONSE" | jq -r '.data[].id // empty' | tr '\n' ' ')
+    
     if [ -z "$INSTANCE_IDS" ]; then
         echo "⚠️ 实例列表为空或未找到有效ID" >&2
         return 2
     fi
-    
     echo "✅ 成功获取到以下实例, ID：$INSTANCE_IDS" >&2
     echo "$INSTANCE_IDS"
     return 0
@@ -149,6 +149,7 @@ get_instance_ids() {
 # 销毁实例
 destroy_instance() {
     local instance_id="$1"
+    echo -e "\n🔥 正在销毁实例, ID: ${instance_id}..." >&2
     
     RESPONSE=$(curl -L -s -X DELETE "$API_DESTROY_URL/${instance_id}" \
         -H "Authorization: Bearer $AUTH_TOKEN")
@@ -161,6 +162,7 @@ destroy_instance() {
 
     API_STATUS=$(echo "$RESPONSE" | jq -r '.code // empty')
     MESSAGE=$(echo "$RESPONSE" | jq -r '.message // "无消息"')
+
     if [ "$API_STATUS" == "200" ]; then
         echo "实例状态: ✅ 销毁成功" >&2
         echo "消息: $MESSAGE" >&2
@@ -176,6 +178,8 @@ destroy_instance() {
 
 # 创建实例（默认时长24小时）
 deploy_instance() {
+    echo -e "\n🚀 正在部署新实例 (PRODUCT_ID: ${PRODUCT_ID}, OS_ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h...)" >&2
+
     # 使用 jq 构造 JSON 负载
     PAYLOAD=$(jq -n \
         --arg product_id "$PRODUCT_ID" \
@@ -199,6 +203,7 @@ deploy_instance() {
 
     RESPONSE=$(eval "$CURL_CMD")
     CURL_STATUS=$?
+
     if [ "$CURL_STATUS" -ne 0 ]; then
         echo "❌ 实例创建失败 (cURL 连接错误: $CURL_STATUS)" >&2
         exit 1
@@ -262,13 +267,14 @@ ${DETAILS_TEXT}
 ========================
 EOF
         )
+        send_tg_notification "$TG_SUCCESS_MSG"
+
         # 输出到终端
         DETAILS_TEXT_LOG=$(echo "$DETAILS_TEXT" | sed -e 's/<code>//g' -e 's/<\/code>//g')
         echo "实例状态: ✅ 创建成功" >&2
         echo "----- 新实例详情 -----" >&2
         echo "$DETAILS_TEXT_LOG" >&2
         echo "--------------------" >&2
-        send_tg_notification "$TG_SUCCESS_MSG"
         
         # 返回新实例 ID IP USER PASS 以供后续使用
         echo "$NEW_ID $NEW_IP $NEW_USER $NEW_PASS"
@@ -285,40 +291,39 @@ API状态: ${API_STATUS}
 请检查账户权限或 API 配置。
 EOF
         )
+        send_tg_notification "$TG_FAIL_MSG"
+
         echo "实例状态: ❌ 创建失败" >&2
         echo "API状态: $API_STATUS" >&2
         echo "错误信息: $MESSAGE" >&2
         echo "$RESPONSE" | jq . >&2
-        send_tg_notification "$TG_FAIL_MSG"
         exit 1
     fi
 }
 
-# 通过 SSH 登录并执行脚本
+# 💡 通过 SSH 登录并执行脚本
 ssh_and_run_script() {
     local instance_ip="$1"
     local instance_user="$2"
     local max_retries=5
-    local wait_time=15
+    local wait_time=10
     local config_succeeded=1
 
+    echo -e "\n⚙️ 正在通过 SSH 登录并执行脚本..." >&2
+    echo "目标: ${instance_user}@${instance_ip} (端口: 22)" >&2
+    echo "🔑 请确保 SSH 私钥已通过 webfactory/ssh-agent Action 注入。" >&2
+    
     # 循环尝试连接 SSH
     for ((i=1; i<=max_retries; i++)); do
-        echo "尝试 SSH 连接和执行 (第 $i/$max_retries 次, 等待 ${wait_time} 秒)..." >&2       
-        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -T "${instance_user}@${instance_ip}" "bash -s" << EOF
-            echo "▶️ [Remote] 开始清理系统锁并检查环境"
-            sudo killall apt apt-get 2>/dev/null
-            sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
-            sudo dpkg --configure -a
-            if ! command -v curl >/dev/null 2>&1; then
-                echo "▶️ [Remote] 正在安装 curl"
-                sudo apt-get update && sudo apt-get install -y curl
-            fi
-            echo "▶️ [Remote] 正在执行远程部署指令..."
-            ${NODEJS_COMMAND}
-EOF
-        then
-            echo -e "\n🎉 远程脚本启动成功" >&2
+        echo "尝试 SSH 连接和执行 (第 $i/$max_retries 次, 等待 ${wait_time} 秒)..." >&2
+        
+        # SSH 选项说明:
+        # -o StrictHostKeyChecking=no: 避免首次连接的密钥确认提示
+        # -o ConnectTimeout=15: 连接超时时间
+        # -T: 禁止伪终端分配，适合远程执行脚本    
+        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -T "${instance_user}@${instance_ip}" "bash -s" <<< "$NODEJS_COMMAND" ; then
+            echo
+            echo "✅ 远程脚本启动成功！" >&2
             config_succeeded=0
             break
         else
@@ -326,20 +331,25 @@ EOF
             sleep "$wait_time"
         fi
     done
+    
+    if [ "$config_succeeded" -ne 0 ]; then
+        echo "❌ 致命错误：SSH 连接或脚本启动在 ${max_retries} 次尝试后失败。" >&2
+        return 1
+    fi
 }
 
-# --- 4. 主执行逻辑 ---
+# --- 4. 主函数 ---
 main() {
     check_token_and_depend  # 检查 Alice API 令牌和依赖项
 
-    # 自动获取 ALICE_ACCOUNT_USER
+    # 自动获取 ALICE_ACCOUNT_USER 如果它未设置
     USER_NAME=$(get_account_username)
     GET_USER_STATUS=$?
-    if [ "$GET_USER_STATUS" -eq 0 ] && [ -n "$USER_NAME" ]; then
+    if [ "$GET_USER_STATUS" -eq 0 ]; then
         ALICE_ACCOUNT_USER="$USER_NAME"
     else
-        echo "⚠️ 获取 Alice 用户名失败, 将使用 action secret 变量值: ${ALICE_ACCOUNT_USER}" >&2
-        echo "⚠️ 如果 action secret 未设置该变量, 则该变量为空值" >&2
+        ALICE_ACCOUNT_USER=""
+        echo "⚠️ 警告：无法获取 Alice 账户用户名。SSH 将以 IP 地址连接" >&2
     fi
     ALICE_SSH_HOST="${ALICE_ACCOUNT_USER}.evo.host.aliceinit.dev"
     echo "▶️ ALICE_SSH_HOST: ${ALICE_SSH_HOST}" >&2
@@ -348,21 +358,21 @@ main() {
     ALICE_SSH_KEY_ID=$(get_ssh_key_id) 
     GET_KEY_STATUS=$?
     if [ "$GET_KEY_STATUS" -ne 0 ]; then
-        echo "⚠️ 获取 SSH Key ID失败, 需以密码连接 SSH" >&2
-        echo "⚠️ 你也可以手动连接新实例 SSH 并执行 nodejs-argo 脚本" >&2
+        echo "⚠️ 警告：无法获取 SSH Key ID。将在不使用 SSH Key 的情况下部署实例" >&2
+        echo "⚠️ 你需要使用实例默认生成的密码登录" >&2
         ALICE_SSH_KEY_ID="" 
     fi
 
-    echo -e "\n======================================"
-    echo "🚀 阶段一：批量销毁现有实例"
-    echo "======================================"
-
+    # 获取并销毁现有实例
     ALL_INSTANCE_IDS=$(get_instance_ids)
     GET_ID_STATUS=$?
     DESTROY_COUNT=0
     DESTROY_FAIL=0
 
-    echo "▶️ 正在销毁实例, ID: $ALL_INSTANCE_IDS" >&2
+    echo -e "\n======================================"
+    echo "🔥 阶段一：批量销毁现有实例"
+    echo "======================================"
+
     if [ "$GET_ID_STATUS" -eq 0 ]; then
         read -ra ID_ARRAY <<< "$ALL_INSTANCE_IDS"
         for id in "${ID_ARRAY[@]}"; do
@@ -372,56 +382,53 @@ main() {
                 DESTROY_FAIL=$((DESTROY_FAIL + 1))
             fi
         done
-        echo "✅ 成功销毁 ${DESTROY_COUNT} 个，❌ 失败 ${DESTROY_FAIL} 个"
-    
+        echo "✅ 成功销毁 ${DESTROY_COUNT} 个，失败 ${DESTROY_FAIL} 个。"
     elif [ "$GET_ID_STATUS" -eq 2 ]; then
-        echo "⚠️ 未发现任何实例，跳过销毁阶段"
+        echo "⚠️ 未发现任何实例，跳过销毁阶段。"
     else
-        echo "❌ 获取实例列表失败，跳过销毁阶段"
+        echo "❌ 获取实例列表失败，跳过销毁阶段。"
     fi
 
     # 部署新实例
     echo -e "\n======================================"
     echo "🚀 阶段二：部署新实例"
     echo "======================================"
-    
-    echo "▶️ 正在部署新实例，实例方案:" >&2
-    echo "💡 PRODUCT_ID: ${PRODUCT_ID}, OS_ID: ${OS_ID}, Time: ${DEPLOY_TIME_HOURS}h" >&2
 
     # 捕获 ID, IP, USER, PASS
     NEW_INSTANCE_INFO=$(deploy_instance)
     DEPLOY_STATUS=$?
+
     if [ "$DEPLOY_STATUS" -ne 0 ]; then
-        echo "❌ 新实例部署失败，请检查账户权限和配置"
+        echo -e "\n❌ 流程失败：新实例部署失败，请检查账户权限和配置。"
         exit 1
+    fi
+
+    # 解析 deploy_instance 的返回值
+    read -r NEW_ID NEW_IP NEW_USER NEW_PASS<<< "$NEW_INSTANCE_INFO"
+    
+    # 确定最终的 SSH 连接目标：优先使用 API 返回的 IP，否则使用预设 Hostname
+    TARGET_IP=""
+    if [ -n "$NEW_IP" ]; then
+        TARGET_IP="$NEW_IP"
+    else
+        TARGET_IP="${ALICE_SSH_HOST}" # 如果 IP 为空，则回退到预设的主机名
+    fi
+    if [ -z "$NEW_USER" ]; then
+        NEW_USER="root" # 默认用户名
     fi
 
     # SSH执行远程脚本
     echo -e "\n======================================"
-    echo "🚀 阶段三：连接 SSH 执行远程脚本"
+    echo "⚙️ 阶段三：通过 SSH 执行远程配置"
     echo "======================================"
-    
-    read -r NEW_ID NEW_IP NEW_USER NEW_PASS <<< "$NEW_INSTANCE_INFO"
-    TARGET_IP="${NEW_IP:-$ALICE_SSH_HOST}"
-    NEW_USER="${NEW_USER:-root}"
-    echo "💡 SSH 目标: $NEW_USER@$TARGET_IP:22" >&2
-    echo "🔑 请确保 SSH 私钥已通过 webfactory/ssh-agent Action 注入" >&2
-    
-    echo "等待系统完全启动："
-    for ((i=20; i>0; i-=5)); do
-      echo "剩余 $i 秒..."
-      sleep 5
-    done
-    echo "系统已启动完成"
-    echo "▶️ 正在连接 SSH 并执行远程脚本" >&2
-    
+
     local remote_file="/opt/nodejs-argo/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
-        echo -e "🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功"
-        echo -e "🎉 如未输出节点信息，可手动连接SSH，执行 cat "${remote_file}" 命令获取"
+        echo -e "🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功完成！"
+        echo -e "🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取节点内容"
         echo -e "🎉 SSH连接信息：IP: ${TARGET_IP}, 端口: 22, 用户名: ${NEW_USER}, 密码: ${NEW_PASS}"
     else
-        echo "❌ 远程脚本执行失败。但实例 ${NEW_ID} 已创建，请登录 ssh 检查"
+        echo -e "\n❌ 流程失败：远程配置脚本执行失败。实例 ${NEW_ID} 已创建，请登录 ssh 检查。"
         exit 1
     fi
 }
