@@ -422,7 +422,7 @@ main() {
     echo "⚙️ 阶段三：通过 SSH 执行远程配置"
     echo "======================================"
 
-    local remote_file="/opt/nodejs-argo/sub.txt"
+    local remote_file="/opt/nodejs-argo/tmp/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
         echo -e "🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功完成！"
         echo -e "🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取节点内容"
