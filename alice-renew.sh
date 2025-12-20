@@ -412,7 +412,7 @@ main() {
     echo "系统已启动完成"
     echo "▶️ 正在连接 SSH 并执行远程脚本" >&2
     
-    local remote_file="/opt/nodejs-argo/tmp/sub.txt"
+    local remote_file="/opt/nodejs-argo/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
         echo -e "🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功"
         echo -e "🎉 如未输出节点信息，可手动连接SSH，执行 cat "${remote_file}" 命令获取"
