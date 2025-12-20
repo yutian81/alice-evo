@@ -15,14 +15,34 @@ WAIT_INTERVAL=3
 
 # 清理系统锁
 clean_sysblock() {
-    echo "▶️ 正在检查并清理系统软件包管理器锁"
-    sudo killall apt apt-get 2>/dev/null
+    echo "▶️ 正在深度清理系统软件包管理器锁"
+    sudo systemctl stop unattended-upgrades 2>/dev/null
+    sudo systemctl stop apt-daily.service 2>/dev/null
+    sudo systemctl stop apt-daily-upgrade.service 2>/dev/null
+
+    for i in {1..5}; do
+        LOCK_PIDS=$(sudo lsof -t /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock 2>/dev/null)
+        BASH_PIDS=$(pgrep -f "apt|dpkg")    
+        ALL_PIDS=$(echo "$LOCK_PIDS $BASH_PIDS" | tr ' ' '\n' | sort -u)
+
+        if [ -n "$ALL_PIDS" ]; then
+            echo "⚠️ 检测到占用进程: $ALL_PIDS，尝试终止 (第 $i 次)..."
+            echo "$ALL_PIDS" | xargs sudo kill -9 2>/dev/null
+            sleep 2
+        else
+            echo "✅ 未检测到锁定进程。"
+            break
+        fi
+    done
+
     sudo rm -f /var/lib/apt/lists/lock
+    sudo rm -f /var/cache/apt/archives/lock
     sudo rm -f /var/lib/dpkg/lock
     sudo rm -f /var/lib/dpkg/lock-frontend
-    sudo rm -f /var/cache/apt/archives/lock
-    sudo dpkg --configure -a 2>/dev/null
-    echo "✅ 系统锁清理完成"
+
+    echo "▶️ 正在修复 dpkg 状态..."
+    sudo dpkg --configure -a
+    echo "✅ 系统环境已强制解锁并修复完成"
 }
 
 # 变量定义和赋值
