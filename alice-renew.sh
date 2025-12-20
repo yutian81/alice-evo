@@ -316,7 +316,7 @@ ssh_and_run_script() {
             fi
             echo "▶️ [Remote] 正在执行远程部署指令..."
             ${NODEJS_COMMAND}
-        EOF
+EOF
         then
             echo -e "\n🎉 远程脚本启动成功" >&2
             config_succeeded=0
