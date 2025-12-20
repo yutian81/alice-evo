@@ -306,16 +306,16 @@ ssh_and_run_script() {
     for ((i=1; i<=max_retries; i++)); do
         echo "尝试 SSH 连接和执行 (第 $i/$max_retries 次, 等待 ${wait_time} 秒)..." >&2       
         if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -T "${instance_user}@${instance_ip}" "bash -s" << EOF
-            echo "▶️ [Remote] 开始清理系统锁并检查环境..."
+            echo "▶️ [Remote] 开始清理系统锁并检查环境"
             sudo killall apt apt-get 2>/dev/null
             sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
             sudo dpkg --configure -a
             if ! command -v curl >/dev/null 2>&1; then
-                echo "▶️ [Remote] 正在安装 curl..."
+                echo "▶️ [Remote] 正在安装 curl"
                 sudo apt-get update && sudo apt-get install -y curl
             fi
             echo "▶️ [Remote] 正在执行远程部署指令..."
-            "${NODEJS_COMMAND}"
+            ${NODEJS_COMMAND}
         EOF
         then
             echo -e "\n🎉 远程脚本启动成功" >&2
