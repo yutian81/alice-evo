@@ -5,12 +5,13 @@
 > 支持 Debian | 乌班图 | Alpine
 
 ```bash
-UUID=822fb34f-af37-445f-8c05-ae35d5423b34 \
-NEZHA_SERVER=nezha.example.com \
-NEZHA_KEY=abcd1234 \
-ARGO_DOMAIN=myargo.site \
-ARGO_AUTH=eyJhIjoixxxxxx \
-bash <(curl -Ls "https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh")
+curl -Ls "https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh" -o vpsnpm.sh && chmod +x vpsnpm.sh && \
+UUID="822fb34f-af37-445f-8c05-ae35d5423b34" \
+NEZHA_SERVER="nezha.example.com" \
+NEZHA_KEY="abcd1234" \
+ARGO_DOMAIN="myargo.site" \
+ARGO_AUTH="eyJhIjoixxxxxx" \
+./vpsnpm.sh
 ```
 
 或者
