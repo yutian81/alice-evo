@@ -8,42 +8,11 @@ SUB_FILE="${SERVICE_DIR}/.npm/sub.txt"
 SCRIPT_URL="https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 OPENRC_SERVICE_FILE="/etc/init.d/${SERVICE_NAME}"
+OPENRC_CONF_FILE="/etc/conf.d/${SERVICE_NAME}"
 TARGET_MODULE="nodejs-argo"
 SYSTEM_USER="root"
 MAX_WAIT=30
 WAIT_INTERVAL=3
-
-# 清理系统锁
-clean_sysblock() {
-    echo "▶️ 正在深度清理系统软件包管理器锁"
-    sudo systemctl stop unattended-upgrades 2>/dev/null
-    sudo systemctl stop apt-daily.service 2>/dev/null
-    sudo systemctl stop apt-daily-upgrade.service 2>/dev/null
-
-    for i in {1..5}; do
-        LOCK_PIDS=$(sudo lsof -t /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock 2>/dev/null)
-        BASH_PIDS=$(pgrep -f "apt|dpkg")    
-        ALL_PIDS=$(echo "$LOCK_PIDS $BASH_PIDS" | tr ' ' '\n' | sort -u)
-
-        if [ -n "$ALL_PIDS" ]; then
-            echo "⚠️ 检测到占用进程: $ALL_PIDS，尝试终止 (第 $i 次)..."
-            echo "$ALL_PIDS" | xargs sudo kill -9 2>/dev/null
-            sleep 2
-        else
-            echo "✅ 未检测到锁定进程。"
-            break
-        fi
-    done
-
-    sudo rm -f /var/lib/apt/lists/lock
-    sudo rm -f /var/cache/apt/archives/lock
-    sudo rm -f /var/lib/dpkg/lock
-    sudo rm -f /var/lib/dpkg/lock-frontend
-
-    echo "▶️ 正在修复 dpkg 状态..."
-    sudo dpkg --configure -a
-    echo "✅ 系统环境已强制解锁并修复完成"
-}
 
 # 变量定义和赋值
 define_vars() {
@@ -56,6 +25,43 @@ define_vars() {
     export ARGO_AUTH=${ARGO_AUTH:-''}
     export CFIP=${CFIP:-'cf.090227.xyz'}
     export NAME=${NAME:-'NPM'}
+}
+
+# 清理系统锁
+clean_sysblock() {
+    echo "▶️ 正在深度清理系统软件包管理器锁"
+    # 仅当 systemctl 存在时执行，避免 Alpine 报错
+    if command -v systemctl >/dev/null 2>&1; then
+        sudo systemctl stop unattended-upgrades 2>/dev/null
+        sudo systemctl stop apt-daily.service 2>/dev/null
+        sudo systemctl stop apt-daily-upgrade.service 2>/dev/null
+    fi
+    
+    for i in {1..5}; do
+        LOCK_PIDS=$(sudo lsof -t /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock 2>/dev/null)
+        BASH_PIDS=$(pgrep -f "apt|dpkg")    
+        ALL_PIDS=$(echo "$LOCK_PIDS $BASH_PIDS" | tr ' ' '\n' | sort -u)
+
+        if [ -n "$ALL_PIDS" ]; then
+            echo "⚠️ 检测到占用进程: $ALL_PIDS，尝试终止 (第 $i 次)..."
+            echo "$ALL_PIDS" | xargs sudo kill -9 2>/dev/null
+            sleep 2
+        else
+            echo "✅ 未检测到锁定进程"
+            break
+        fi
+    done
+
+    sudo rm -f /var/lib/apt/lists/lock
+    sudo rm -f /var/cache/apt/archives/lock
+    sudo rm -f /var/lib/dpkg/lock
+    sudo rm -f /var/lib/dpkg/lock-frontend
+
+    if command -v dpkg >/dev/null 2>&1; then
+        echo "▶️ 正在修复 dpkg 状态..."
+        sudo dpkg --configure -a
+    fi
+    echo "✅ 系统环境已强制解锁并修复完成"
 }
 
 # 封装下载函数
@@ -72,11 +78,11 @@ download_script() {
     fi
 }
 
-# 权限、工作目录设置及启动脚本下载
+# 下载启动脚本 vpsnpm.sh
 setup_environment() {
     # 权限检查：允许非 root 用户执行已安装的服务脚本，但首次安装必须是 root
     if [ "$EUID" -ne 0 ] && [ ! -f "$SERVICE_FILE" ] && [ ! -f "$OPENRC_SERVICE_FILE" ]; then
-        echo "⚠️ 首次安装服务需要 root 权限。请使用 sudo 运行此脚本"
+        echo "⚠️ 首次安装服务需要 root 权限, 请使用 sudo 运行此脚本"
         echo "sudo bash $0"
         exit 1
     fi
@@ -91,55 +97,80 @@ setup_environment() {
     fi
 }
 
-# Node.js 环境准备
-install_node() {
-    echo -e "\n--- ▶️ 检查和安装 Node.js 环境 ---"
-    if command -v node >/dev/null 2>&1; then
-        CURRENT_NODE_VERSION=$(node -v | sed 's/v//')
-        echo "✅ Node.js 已安装，版本: ${CURRENT_NODE_VERSION}"
+# 检查并安装系统依赖与 Node.js 环境
+install_deps() {
+    echo -e "\n▶️ 正在检查系统依赖与 Node.js 环境"
+    
+    # 如果是 root 且没 sudo，创建一个 alias
+    if [ "$EUID" -eq 0 ] && ! command -v sudo >/dev/null 2>&1; then
+        alias sudo=''
+    fi
+
+    # 基础工具预检 (curl, sudo)
+    local BASIC_TOOLS=("curl" "sudo")
+    local TO_INSTALL_TOOLS=()
+    for tool in "${BASIC_TOOLS[@]}"; do
+        if ! command -v "$tool" >/dev/null 2>&1; then
+            TO_INSTALL_TOOLS+=("$tool")
+        fi
+    done
+
+    # Node.js 环境预检
+    local NEED_NODE=false
+    if ! command -v node >/dev/null 2>&1; then
+        NEED_NODE=true
+    fi
+
+    if [ ${#TO_INSTALL_TOOLS[@]} -eq 0 ] && [ "$NEED_NODE" = false ]; then
+        echo "✅ 系统基础工具与 Node.js 已就绪 (版本: $(node -v))"
         return 0
     fi
 
-    echo "⚠️ Node.js 未安装，开始自动安装..."
+    # 执行安装逻辑
+    echo "⚠️ 正在准备缺失环境: ${TO_INSTALL_TOOLS[*]} ${NEED_NODE:+nodejs}"
     if [ -f /etc/os-release ]; then
         . /etc/os-release
-        OS=$ID
+        case "$ID" in
+            debian|ubuntu|devuan)
+                # 如果需要安装 Node.js，先添加源
+                if [ "$NEED_NODE" = true ]; then
+                    apt-get update && apt-get install -y curl ca-certificates gnupg
+                    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+                fi
+                apt-get install -y "${TO_INSTALL_TOOLS[@]}" ${NEED_NODE:+nodejs}
+                ;;
+            centos|rhel|fedora)
+                if [ "$NEED_NODE" = true ]; then
+                    curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+                fi
+                dnf install -y "${TO_INSTALL_TOOLS[@]}" ${NEED_NODE:+nodejs}
+                ;;
+            alpine)
+                apk update
+                apk add --no-cache "${TO_INSTALL_TOOLS[@]}" ${NEED_NODE:+nodejs npm}
+                ;;
+            *)
+                echo "❌ 无法识别系统类型 ($ID)，请手动安装依赖"
+                exit 1
+                ;;
+        esac
     else
-        echo "⚠️ 无法识别系统类型，请手动安装 Node.js"
+        echo "❌ 无法获取系统信息，请手动安装基础工具和 Node.js"
         exit 1
     fi
 
-    case "$OS" in
-        debian|ubuntu|devuan)
-            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-            ;;
-        centos|rhel|fedora)
-            curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo -E bash -
-            sudo dnf install -y nodejs
-            ;;
-        alpine)
-            apk update
-            apk add --no-cache nodejs-current npm
-            ;;
-        *)
-            echo "⚠️ 系统 ${OS} 不支持自动安装 Node.js，请手动安装"
-            exit 1
-            ;;
-    esac
-
+    # 最终验证
     if command -v node >/dev/null 2>&1; then
-        NODE_VERSION=$(node -v | sed 's/v//')
-        echo "🎉 Node.js 安装成功！版本: ${NODE_VERSION}"
+        echo "🎉 环境配置成功！Node.js 版本: $(node -v)"
     else
-        echo "❌ Node.js 安装失败，退出..."
+        echo "❌ Node.js 安装验证失败，请检查网络或系统源"
         exit 1
     fi
 }
 
-# Node.js 依赖安装
-install_deps() {
-    echo -e "\n--- ▶️ 检查和安装 Node.js 依赖: ${TARGET_MODULE} ---"
+# 安装 npm 包
+install_npm() {
+    echo -e "\n▶️ 检查和安装 npm 包: ${TARGET_MODULE} ---"
     if [ ! -d "node_modules" ] || ! npm list "${TARGET_MODULE}" --depth=0 >/dev/null 2>&1; then
         echo "▶️ 正在安装/重新安装 ${TARGET_MODULE}..."
         npm install "${TARGET_MODULE}"
@@ -151,13 +182,29 @@ install_deps() {
 # 创建并启动服务 (始终重建/覆盖)
 create_service() {
     define_vars # 变量赋值
-    
-    echo -e "\n--- ▶️ 配置并重启服务 ---"
+    echo -e "\n▶️ 配置并重启服务"
+
+    # openrc 服务
     if command -v rc-update >/dev/null 2>&1; then
-        echo "▶️ 检测到 OpenRC 系统，配置 OpenRC 服务文件: ${OPENRC_SERVICE_FILE}"
+        echo "▶️ 正在生成 OpenRC 系统服务配置文件: ${OPENRC_CONF_FILE}"
+        cat > "$OPENRC_CONF_FILE" << EOF
+# Configuration for ${SERVICE_NAME}
+UUID="${UUID}"
+NEZHA_SERVER="${NEZHA_SERVER}"
+NEZHA_PORT="${NEZHA_PORT}"
+NEZHA_KEY="${NEZHA_KEY}"
+ARGO_DOMAIN="${ARGO_DOMAIN}"
+ARGO_AUTH="${ARGO_AUTH}"
+CFIP="${CFIP}"
+NAME="${NAME}"
+EOF
+        chmod 644 "$OPENRC_CONF_FILE"
+
+        echo "▶️ 正在生成 OpenRC 系统服务逻辑文件: ${OPENRC_SERVICE_FILE}"
         cat > "$OPENRC_SERVICE_FILE" << EOF
 #!/sbin/openrc-run
 
+# OpenRC 会自动加载 ${OPENRC_CONF_FILE} 中的变量
 name="${SERVICE_NAME}"
 description="Auto-configured NodeJS Argo Tunnel Service"
 command="/usr/bin/env"
@@ -165,32 +212,26 @@ command_args="bash ${SCRIPT_PATH}"
 command_background="yes"
 directory="${SERVICE_DIR}"
 user="${SYSTEM_USER}"
-
+pidfile="/run/\${RC_SVCNAME}.pid"
 depend() {
     need net
     use dns logger
 }
-
 start_pre() {
-    export UUID="${UUID}"
-    export NEZHA_SERVER="${NEZHA_SERVER}"
-    export NEZHA_PORT="${NEZHA_PORT}"
-    export NEZHA_KEY="${NEZHA_KEY}"
-    export ARGO_DOMAIN="${ARGO_DOMAIN}"
-    export ARGO_AUTH="${ARGO_AUTH}"
-    export CFIP="${CFIP}"
-    export NAME="${NAME}"
+    export UUID NEZHA_SERVER NEZHA_PORT NEZHA_KEY ARGO_DOMAIN ARGO_AUTH CFIP NAME
 }
 EOF
         chmod +x "$OPENRC_SERVICE_FILE"
-        echo "✅ OpenRC 服务文件创建成功"
         
+        echo "✅ OpenRC 系统服务配置完成"
         rc-service "${SERVICE_NAME}" stop 2>/dev/null || true
         rc-update add "${SERVICE_NAME}" default 2>/dev/null || true
         rc-service "${SERVICE_NAME}" start
-        echo "🎉 服务安装并启动成功！请检查状态：rc-service ${SERVICE_NAME} status"
+        echo "🎉 服务启动成功！状态查询：rc-service ${SERVICE_NAME} status"
+    
+    # systemd 服务
     else
-        echo "▶️ 检测到 Systemd 系统，配置 Systemd 服务文件: ${SERVICE_FILE}"
+        echo "▶️ 正在生成 Systemd 系统服务文件: ${SERVICE_FILE}"
         cat > "$SERVICE_FILE" << EOF
 [Unit]
 Description=Auto-configured NodeJS Argo Tunnel Service (Simplified)
@@ -224,9 +265,8 @@ EOF
         echo "✅ Systemd 服务文件创建成功"
         systemctl daemon-reload
         systemctl enable "${SERVICE_NAME}.service"
-        systemctl restart "${SERVICE_NAME}.service" # 始终重启，确保新配置生效
-        
-        echo "🎉 服务安装并启动成功！请检查状态：sudo systemctl status ${SERVICE_NAME}"
+        systemctl restart "${SERVICE_NAME}.service"
+        echo "🎉 服务启动成功！状态查询：sudo systemctl status ${SERVICE_NAME}"
     fi
 }
 
@@ -234,11 +274,11 @@ EOF
 if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     clean_sysblock
     setup_environment # 设置环境和权限
-    install_node # 安装 Node.js
-    install_deps # 安装npm包 nodejs-argo
+    install_deps # 安装基础依赖和 Node.js
+    install_npm # 安装npm包 nodejs-argo
     create_service # 创建/重启服务
     
-    echo -e "\n--- ▶️ 等待核心进程写入节点信息 (最多等待 30 秒) ---" >&2  
+    echo -e "\n▶️ 等待核心进程写入节点信息 (最多等待 30 秒)" >&2  
     for ((i=0; i < MAX_WAIT; i+=WAIT_INTERVAL)); do
         if [ -f "${SUB_FILE}" ]; then
             echo "✅ 节点信息文件已找到！" >&2
@@ -260,5 +300,5 @@ if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
     exit 0 # 安装模式结束，退出。
 fi
 
-echo -e "\n--- ▶️ 正在以服务模式启动核心进程 ---"
+echo -e "\n▶️ 正在以服务模式启动核心进程"
 npx "${TARGET_MODULE}"
