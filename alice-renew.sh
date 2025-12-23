@@ -310,11 +310,11 @@ ssh_and_run_script() {
         # -o ConnectTimeout=15: 连接超时时间
         # -T: 禁止伪终端分配，适合远程执行脚本    
         if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -T "${instance_user}@${instance_ip}" "bash -s" <<< "$NODEJS_COMMAND" ; then
-            echo -e "\n🎉 远程脚本启动成功！" >&2
+            echo -e "🎉 远程脚本启动成功！" >&2
             config_succeeded=0
             break
         else
-            echo "❌ SSH 连接或启动失败。等待 ${wait_time} 秒后重试..." >&2
+            echo "❌ SSH 连接或启动失败, 等待 ${wait_time} 秒后重试..." >&2
             sleep "$wait_time"
         fi
     done
@@ -414,7 +414,7 @@ main() {
     
     local remote_file="/opt/nodejs-argo/.npm/sub.txt"
     if ssh_and_run_script "$TARGET_IP" "$NEW_USER"; then
-        echo -e "🎉 流程完成！新实例 ${NEW_ID} 部署和配置已成功"
+        echo -e "🎉 新实例 ${NEW_ID} 部署和配置已完成"
         echo -e "🎉 可手动连接SSH，并执行 cat "${remote_file}" 命令获取节点信息"
         echo -e "🎉 SSH连接信息：IP: ${TARGET_IP}, 端口: 22, 用户名: ${NEW_USER}, 密码: ${NEW_PASS}"
     else
