@@ -12,7 +12,7 @@ OPENRC_CONF_FILE="/etc/conf.d/${SERVICE_NAME}"
 TARGET_MODULE="nodejs-argo"
 SYSTEM_USER="root"
 MAX_WAIT=30
-WAIT_INTERVAL=3
+WAIT_INTERVAL=5
 
 # 变量定义和赋值
 define_vars() {
@@ -29,22 +29,23 @@ define_vars() {
 
 # 清理系统锁
 clean_sysblock() {
+    [ "$EUID" -ne 0 ] && return
     echo "▶️ 正在深度清理系统软件包管理器锁"
     # 仅当 systemctl 存在时执行，避免 Alpine 报错
     if command -v systemctl >/dev/null 2>&1; then
-        sudo systemctl stop unattended-upgrades 2>/dev/null
-        sudo systemctl stop apt-daily.service 2>/dev/null
-        sudo systemctl stop apt-daily-upgrade.service 2>/dev/null
+        systemctl stop unattended-upgrades 2>/dev/null
+        systemctl stop apt-daily.service 2>/dev/null
+        systemctl stop apt-daily-upgrade.service 2>/dev/null
     fi
     
     for i in {1..5}; do
-        LOCK_PIDS=$(sudo lsof -t /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock 2>/dev/null)
+        LOCK_PIDS=$(lsof -t /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock 2>/dev/null)
         BASH_PIDS=$(pgrep -f "apt|dpkg")    
         ALL_PIDS=$(echo "$LOCK_PIDS $BASH_PIDS" | tr ' ' '\n' | sort -u)
 
         if [ -n "$ALL_PIDS" ]; then
             echo "⚠️ 检测到占用进程: $ALL_PIDS，尝试终止 (第 $i 次)..."
-            echo "$ALL_PIDS" | xargs -r sudo kill -9 2>/dev/null
+            echo "$ALL_PIDS" | xargs -r kill -9 2>/dev/null
             sleep 2
         else
             echo "✅ 未检测到锁定进程"
@@ -52,14 +53,11 @@ clean_sysblock() {
         fi
     done
 
-    sudo rm -f /var/lib/apt/lists/lock
-    sudo rm -f /var/cache/apt/archives/lock
-    sudo rm -f /var/lib/dpkg/lock
-    sudo rm -f /var/lib/dpkg/lock-frontend
+    rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
 
     if command -v dpkg >/dev/null 2>&1; then
         echo "▶️ 正在修复 dpkg 状态..."
-        sudo dpkg --configure -a
+        dpkg --configure -a
     fi
     echo "✅ 系统环境已强制解锁并修复完成"
 }
@@ -108,7 +106,7 @@ install_deps() {
     fi
 
     # 基础工具预检
-    local BASIC_TOOLS=("curl" "sudo" "gnupg" "ca-certificates")
+    local BASIC_TOOLS=("curl" "gnupg" "ca-certificates")
     local TO_INSTALL_TOOLS=()
     for tool in "${BASIC_TOOLS[@]}"; do
         if ! command -v "$tool" >/dev/null 2>&1; then
@@ -178,7 +176,6 @@ install_deps() {
 install_npm() {
     echo -e "\n▶️ 检查和安装 npm 包: ${TARGET_MODULE} ---"
     if [ ! -d "node_modules" ] || ! npm list "${TARGET_MODULE}" --depth=0 >/dev/null 2>&1; then
-        echo "▶️ 正在安装/重新安装 ${TARGET_MODULE}..."
         npm install "${TARGET_MODULE}"
     else
         echo "🎉 ${TARGET_MODULE} 已安装且版本匹配，跳过..."
@@ -188,6 +185,9 @@ install_npm() {
 # 创建并启动服务 (始终重建/覆盖)
 create_service() {
     define_vars # 变量赋值
+    local NODE_BIN=$(command -v node)
+    local APP_BIN="${SERVICE_DIR}/node_modules/.bin/${TARGET_MODULE}"
+    
     echo -e "\n▶️ 配置并重启服务"
 
     # openrc 服务
@@ -209,20 +209,15 @@ EOF
         echo "▶️ 正在生成 OpenRC 系统服务逻辑文件: ${OPENRC_SERVICE_FILE}"
         cat > "$OPENRC_SERVICE_FILE" << EOF
 #!/sbin/openrc-run
-
-# OpenRC 会自动加载 ${OPENRC_CONF_FILE} 中的变量
 name="${SERVICE_NAME}"
 description="Auto-configured NodeJS Argo Tunnel Service"
-command="/usr/bin/env"
-command_args="bash ${SCRIPT_PATH}"
+command="${NODE_BIN}"
+command_args="${APP_BIN}"
 command_background="yes"
 directory="${SERVICE_DIR}"
 user="${SYSTEM_USER}"
 pidfile="/run/\${RC_SVCNAME}.pid"
-depend() {
-    need net
-    use dns logger
-}
+depend() { need net; }
 start_pre() {
     export UUID NEZHA_SERVER NEZHA_PORT NEZHA_KEY ARGO_DOMAIN ARGO_AUTH CFIP NAME
 }
@@ -246,9 +241,7 @@ After=network.target
 [Service]
 Type=simple
 User=${SYSTEM_USER}
-# Group=${SYSTEM_USER}
-
-# 环境变量
+WorkingDirectory=${SERVICE_DIR}
 Environment=UUID=${UUID}
 Environment=NEZHA_SERVER=${NEZHA_SERVER}
 Environment=NEZHA_PORT=${NEZHA_PORT}
@@ -257,9 +250,7 @@ Environment=ARGO_DOMAIN=${ARGO_DOMAIN}
 Environment=ARGO_AUTH=${ARGO_AUTH}
 Environment=CFIP=${CFIP}
 Environment=NAME=${NAME}
-
-WorkingDirectory=${SERVICE_DIR}
-ExecStart=${SCRIPT_PATH}
+ExecStart=${NODE_BIN} ${APP_BIN}
 StandardOutput=journal
 StandardError=journal
 Restart=always
@@ -277,34 +268,29 @@ EOF
 }
 
 # 主执行逻辑
-if [[ -z "$INVOCATION_ID" && -z "$OPENRC_INIT_DIR" ]]; then
-    clean_sysblock
-    setup_environment # 设置环境和权限
-    install_deps # 安装基础依赖和 Node.js
-    install_npm # 安装npm包 nodejs-argo
-    create_service # 创建/重启服务
-    
-    echo -e "\n▶️ 等待核心进程写入节点信息 (最多等待 30 秒)" >&2  
-    for ((i=0; i < MAX_WAIT; i+=WAIT_INTERVAL)); do
-        if [ -f "${SUB_FILE}" ]; then
-            echo "✅ 节点信息文件已找到！" >&2
-            break
-        fi
-        echo "等待 ${WAIT_INTERVAL} 秒... (${i}/${MAX_WAIT} 秒)" >&2
-        sleep ${WAIT_INTERVAL}
-    done
+clean_sysblock
+setup_environment # 设置环境和权限
+install_deps # 安装基础依赖和 Node.js
+install_npm # 安装npm包 nodejs-argo
+create_service # 创建/重启服务
 
-    echo -e "\n----- 🚀 节点信息 (Base64) -----"
+echo -e "\n▶️ 等待核心进程写入节点信息 (最多等待 30 秒)" >&2  
+for ((i=0; i < MAX_WAIT; i+=WAIT_INTERVAL)); do
     if [ -f "${SUB_FILE}" ]; then
-        cat "${SUB_FILE}"
-        echo -e "\n-----------------------------"
-    else
-        echo "❌ 警告：未在预期时间内找到节点信息文件 ${SUB_FILE}"
-        echo "⚠️ 请稍后手动通过 SSH 连接检查：cat ${SUB_FILE}"
+        echo "✅ 节点信息文件已找到！" >&2
+        break
     fi
-    
-    exit 0 # 安装模式结束，退出。
+    echo "等待 ${WAIT_INTERVAL} 秒... (${i}/${MAX_WAIT} 秒)" >&2
+    sleep ${WAIT_INTERVAL}
+done
+
+echo -e "\n----- 🚀 节点信息 (Base64) -----"
+if [ -f "${SUB_FILE}" ]; then
+    cat "${SUB_FILE}"
+    echo -e "\n-----------------------------"
+else
+    echo "❌ 警告：未在预期时间内找到节点信息文件 ${SUB_FILE}"
+    echo "⚠️ 请稍后手动通过 SSH 连接检查：cat ${SUB_FILE}"
 fi
 
-echo -e "\n▶️ 正在以服务模式启动核心进程"
-npx "${TARGET_MODULE}"
+exit 0 # 安装模式结束，退出
