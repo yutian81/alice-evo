@@ -76,13 +76,13 @@ clean_sysblock() {
 install_environment() {
     echo -e "\n▶️ 检查系统依赖与 Node.js 环境..."
     
-    # 5.1 检查是否存在可用 Node
+    # 检查是否存在可用 Node
     if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
         echo "✅ Node.js 已就绪: $(node -v)"
         return 0
     fi
 
-    # 5.2 Root 用户安装策略
+    # Root 用户安装策略
     if [ "$EUID" -eq 0 ]; then
         [ -f /etc/os-release ] || { echo "❌ 无法读取系统信息，请手动安装 nodejs 后重试"; exit 1; }
         . /etc/os-release
@@ -113,12 +113,10 @@ install_environment() {
                 ;;
         esac
 
-    # 5.3 非 Root 用户安装策略 (NVM)
+    # 非 Root 用户安装策略 (NVM)
     else
         echo "🚀 [非 Root] 正在通过 NVM 自动化安装 Node.js..."
         export NVM_DIR="$HOME/.nvm"
-        
-        # 安装 NVM
         if [ ! -d "$NVM_DIR" ]; then
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
         fi
@@ -131,7 +129,7 @@ install_environment() {
         nvm alias default 'lts/*'
     fi
 
-    # 5.4 最终验证
+    # 最终验证
     if ! command -v node >/dev/null 2>&1; then
         echo "❌ Node.js 安装失败，请检查网络连接。" && exit 1
     else
@@ -144,7 +142,7 @@ setup_app() {
     mkdir -p "${SERVICE_DIR}"
     cd "${SERVICE_DIR}" || exit 1
 
-    echo "▶️ 安装/更新业务模块: ${TARGET_MODULE}"
+    echo "▶️ 安装/更新 npm 包: ${TARGET_MODULE}"
     [ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh"
     
     if [ ! -f "package.json" ]; then
@@ -159,16 +157,16 @@ setup_app() {
 # --- 7. 创建并启动服务 ---
 create_service() {
     define_vars
-    # 获取 node 的绝对路径
-    local NODE_BIN=$(command -v node)
+    local NODE_BIN=$(command -v node) # 获取 node 的绝对路径
     local APP_BIN="${SERVICE_DIR}/node_modules/.bin/${TARGET_MODULE}"
     
     echo -e "\n▶️ 生成并启动服务..."
-    echo "   Node 路径: ${NODE_BIN}"
-    echo "   程序 路径: ${APP_BIN}"
+    echo "▶️ Node 路径: ${NODE_BIN}"
+    echo "▶️ 程序 路径: ${APP_BIN}"
 
     # === 分支 A: Root 用户 (Systemd / OpenRC) ===
     if [ "$EUID" -eq 0 ]; then
+        
         # A1. Systemd
         if command -v systemctl >/dev/null 2>&1; then
             cat > "$SERVICE_FILE" << EOF
@@ -231,6 +229,7 @@ EOF
 
     # === 分支 B: 非 Root 用户 (Systemd User / Nohup) ===
     else
+        
         # B1. Systemd (User Mode)
         if command -v systemctl >/dev/null 2>&1; then
             if [ ! -f "/var/lib/systemd/linger/${SYSTEM_USER}" ]; then
