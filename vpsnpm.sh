@@ -44,7 +44,7 @@ clean_sysblock() {
 
         if [ -n "$ALL_PIDS" ]; then
             echo "⚠️ 检测到占用进程: $ALL_PIDS，尝试终止 (第 $i 次)..."
-            echo "$ALL_PIDS" | xargs sudo kill -9 2>/dev/null
+            echo "$ALL_PIDS" | xargs -r sudo kill -9 2>/dev/null
             sleep 2
         else
             echo "✅ 未检测到锁定进程"
@@ -99,15 +99,16 @@ setup_environment() {
 
 # 检查并安装系统依赖与 Node.js 环境
 install_deps() {
-    echo -e "\n▶️ 正在检查系统依赖与 Node.js 环境"
+    echo -e "\n▶️ 正在检查系统依赖与 Nodejs 环境"
+    export DEBIAN_FRONTEND=noninteractive # 强制非交互模式
     
     # 如果是 root 且没 sudo，创建一个 alias
     if [ "$EUID" -eq 0 ] && ! command -v sudo >/dev/null 2>&1; then
         alias sudo=''
     fi
 
-    # 基础工具预检 (curl, sudo)
-    local BASIC_TOOLS=("curl" "sudo")
+    # 基础工具预检
+    local BASIC_TOOLS=("curl" "sudo" "gnupg" "ca-certificates")
     local TO_INSTALL_TOOLS=()
     for tool in "${BASIC_TOOLS[@]}"; do
         if ! command -v "$tool" >/dev/null 2>&1; then
@@ -127,17 +128,22 @@ install_deps() {
     fi
 
     # 执行安装逻辑
-    echo "⚠️ 正在准备缺失环境: ${TO_INSTALL_TOOLS[*]} ${NEED_NODE:+nodejs}"
+    echo "▶️ 正在准备缺失环境: ${TO_INSTALL_TOOLS[*]} ${NEED_NODE:+nodejs}"
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         case "$ID" in
             debian|ubuntu|devuan)
-                # 如果需要安装 Node.js，先添加源
+                echo "🔧 正在尝试强制修复 apt 依赖冲突..."
+                local OPTS="-y -f -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
+                apt-get update -y
+                apt-get install $OPTS
+                
                 if [ "$NEED_NODE" = true ]; then
-                    apt-get update && apt-get install -y curl ca-certificates gnupg
+                    echo "🌐 正在配置 NodeSource 软件源..."
                     curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
                 fi
-                apt-get install -y "${TO_INSTALL_TOOLS[@]}" ${NEED_NODE:+nodejs}
+                apt-get install $OPTS "${TO_INSTALL_TOOLS[@]}" ${NEED_NODE:+nodejs}
+                apt-get clean
                 ;;
             centos|rhel|fedora)
                 if [ "$NEED_NODE" = true ]; then
@@ -240,7 +246,7 @@ After=network.target
 [Service]
 Type=simple
 User=${SYSTEM_USER}
-Group=${SYSTEM_USER}
+# Group=${SYSTEM_USER}
 
 # 环境变量
 Environment=UUID=${UUID}
