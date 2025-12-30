@@ -21,7 +21,6 @@ else
     # 非 Root 无法写入系统级 /etc/init.d，OpenRC 将降级为 nohup
 fi
 
-SCRIPT_PATH="${SERVICE_DIR}/vpsnpm.sh"
 SUB_FILE="${SERVICE_DIR}/.npm/sub.txt"
 MAX_WAIT=30
 WAIT_INTERVAL=3
@@ -143,19 +142,14 @@ install_environment() {
     fi
 }
 
-# --- 6. 部署业务代码 ---
+# --- 6. 安装 npm 包: nodejs-argo ---
 setup_app() {
     mkdir -p "${SERVICE_DIR}"
     cd "${SERVICE_DIR}" || exit 1
-    
-    echo "▶️ 下载辅助脚本..."
-    curl -o "$SCRIPT_PATH" -Ls "$SCRIPT_URL" && chmod +x "$SCRIPT_PATH"
 
     echo "▶️ 安装/更新业务模块: ${TARGET_MODULE}"
-    # 再次确保环境加载 (针对 NVM)
     [ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh"
     
-    # 初始化 package.json 并安装
     if [ ! -f "package.json" ]; then
         npm init -y >/dev/null 2>&1
     fi
@@ -168,7 +162,7 @@ setup_app() {
 # --- 7. 创建并启动服务 ---
 create_service() {
     define_vars
-    # 获取 node 的绝对路径 (至关重要，解决 systemd 找不到 nvm node 的问题)
+    # 获取 node 的绝对路径
     local NODE_BIN=$(command -v node)
     local APP_BIN="${SERVICE_DIR}/node_modules/.bin/${TARGET_MODULE}"
     
