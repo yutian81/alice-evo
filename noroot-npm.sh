@@ -261,7 +261,7 @@ EOF
             systemctl --user daemon-reload
             systemctl --user enable --now "${SERVICE_NAME}"
             echo "🎉 Systemd 用户服务已启动"
-            echo "⚠️  提示: 建议执行 'loginctl enable-linger $(whoami)' 以保持断开 SSH 后服务运行。"
+            echo "⚠️ 提示: 建议执行 'loginctl enable-linger $(whoami)' 以保持断开 SSH 后服务运行。"
 
         # B2. Nohup (兜底方案，适用于无 Systemd 的普通用户)
         else
@@ -293,6 +293,6 @@ for ((i=0; i < MAX_WAIT; i+=WAIT_INTERVAL)); do
     sleep ${WAIT_INTERVAL}
 done
 
-echo "❌ 警告：未在预期时间内找到节点文件 (${SUB_FILE})"
-echo "   请检查服务状态或日志文件。"
+echo "⚠️ 警告：未在预期时间内找到节点文件 (${SUB_FILE})"
+echo "⚠️ 请检查服务状态或日志文件"
 exit 0
