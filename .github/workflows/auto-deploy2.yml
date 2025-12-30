@@ -1,0 +1,59 @@
+name: 🚀 Alice Evo VM 自动部署 Plus
+
+on:
+  schedule:
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+    inputs:
+      run_mode:
+        description: '选择运行模式'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both # 销毁 + 部署 + 配置
+          - deploy_only # 仅销毁 + 部署
+          - setup_only # 仅配置 (完全依赖默认值和环境)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🛠️ 安装依赖 (jq, sshpass)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq ssh sshpass
+
+      - name: 🔑 注入 SSH 私钥到 Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.ALICE_SSH_KEY }}
+
+      - name: 🚀 运行部署脚本 (Renew)
+        id: deploy_run
+        if: github.event_name == 'schedule' || github.event.inputs.run_mode != 'setup_only'
+        env:
+          ALICE_CLIENT_ID: ${{ secrets.ALICE_CLIENT_ID }}
+          ALICE_API_SECRET: ${{ secrets.ALICE_API_SECRET }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          chmod +x alice-renew2.sh
+          # 如果成功，会输出：ID IP USER PASS HOST
+          RESULT=$(./alice-renew2.sh)
+          echo "NEW_INSTANCE_DATA=$RESULT" >> $GITHUB_OUTPUT
+
+      - name: ⚙️ 运行配置脚本 (Setup)
+        if: always() && (github.event_name == 'schedule' || github.event.inputs.run_mode != 'deploy_only')
+        env:
+          NODEJS_COMMAND: ${{ vars.NODEJS_COMMAND }}
+        run: |
+          chmod +x alice-setup.sh
+          PARAMS="${{ steps.deploy_run.outputs.NEW_INSTANCE_DATA }}"
+
+          echo "启动远程脚本，参数: $PARAMS"
+          ./alice-setup.sh $PARAMS
