@@ -109,16 +109,10 @@ install_deps() {
         . /etc/os-release
         case "$ID" in
             debian|ubuntu|devuan)
-                echo "🔧 正在尝试强制修复 apt 依赖冲突..."
-                local OPTS="-y -f -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
                 dpkg --configure -a || true
                 apt-get update -y
-                
-                if [ "$NEED_NODE" = true ]; then
-                    echo "🌐 正在配置 NodeSource 软件源..."
-                    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-                fi
-                apt-get install $OPTS "${TO_INSTALL_TOOLS[@]}" ${NEED_NODE:+nodejs}
+                [ "$NEED_NODE" = true ] && curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+                apt-get install -y "${TO_INSTALL_TOOLS[@]}" ${NEED_NODE:+nodejs}
                 apt-get clean
                 ;;
             centos|rhel|fedora)
