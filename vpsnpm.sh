@@ -111,6 +111,7 @@ install_deps() {
             debian|ubuntu|devuan)
                 echo "🔧 正在尝试强制修复 apt 依赖冲突..."
                 local OPTS="-y -f -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
+                dpkg --configure -a
                 apt-get update -y
                 apt-get install $OPTS
                 
