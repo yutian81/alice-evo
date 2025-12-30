@@ -41,7 +41,6 @@ bash <(curl -Ls https://raw.githubusercontent.com/yutian81/alice-evo/main/un-vps
 - **NODEJS_COMMAND**: nodejs-argo远程脚本，必须包含 `ARGO_DOMAIN` 和 `ARGO_AUTH` 两个外置变量，以确保节点保活，内容即为上述第一个一键脚本
 
 ### 可选变量
-- ALICE_ACCOUNT_USER：alice账号用户名
 - TG_BOT_TOKEN：TG通知需要
 - TG_CHAT_ID：TG通知需要
 
