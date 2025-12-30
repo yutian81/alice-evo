@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# 拆分脚本：仅负责VPS的销毁和重建
+
 # --- 1. 配置信息 (从环境变量获取) ---
 
 # 鉴权变量, 从 https://console.alice.ws/ephemera/evo-cloud 获取

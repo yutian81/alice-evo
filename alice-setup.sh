@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# 拆分脚本：负责对重建的VPS执行远程脚本
+
 NEW_ID=$1
 NEW_IP=$2
 NEW_USER=${3:-"root"}

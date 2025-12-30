@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# 一键脚本，自动完成从VPS部署到远程代码执行的全部流程
+
 # --- 1. 配置信息 (从环境变量获取) ---
 
 # 鉴权变量, 从 https://console.alice.ws/ephemera/evo-cloud 获取

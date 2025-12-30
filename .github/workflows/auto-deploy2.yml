@@ -1,8 +1,8 @@
 name: 🚀 Alice Evo VM 自动部署 Plus
 
 on:
-  schedule:
-    - cron: '0 19 * * *'
+  #schedule:
+  #  - cron: '0 19 * * *'
   workflow_dispatch:
     inputs:
       run_mode:
