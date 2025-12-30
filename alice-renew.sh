@@ -299,22 +299,25 @@ ssh_and_run_script() {
     local instance_ip="$1"
     local instance_user="$2"
     local max_retries=5
-    local wait_time=15
+    local wait_time=30
+    local timeout=15
     local config_succeeded=1
 
-    # 循环尝试连接 SSH
+    echo "等待 VPS 初始化 (${wait_time} 秒)..." >&2
+    sleep "$wait_time"
+
     for ((i=1; i<=max_retries; i++)); do
-        echo "尝试 SSH 连接和执行 (第 $i/$max_retries 次, 等待 ${wait_time} 秒)..." >&2    
+        echo "正在尝试 SSH 连接并执行远程脚本 (第 $i/$max_retries 次)..." >&2   
         # SSH 选项说明:
         # -o StrictHostKeyChecking=no: 避免首次连接的密钥确认提示
         # -o ConnectTimeout=15: 连接超时时间
         # -T: 禁止伪终端分配，适合远程执行脚本    
-        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -T "${instance_user}@${instance_ip}" "bash -s" <<< "$NODEJS_COMMAND" ; then
-            echo -e "🎉 远程脚本启动成功！" >&2
+        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout="${timeout}" -T "${instance_user}@${instance_ip}" "bash -s" <<< "$NODEJS_COMMAND" ; then
+            echo -e "\n🎉 远程脚本启动成功！" >&2
             config_succeeded=0
             break
         else
-            echo "❌ SSH 连接或启动失败, 等待 ${wait_time} 秒后重试..." >&2
+            echo "❌ SSH 连接失败, 等待 ${wait_time} 秒后重试..." >&2
             sleep "$wait_time"
         fi
     done
