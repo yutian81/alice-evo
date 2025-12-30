@@ -146,7 +146,7 @@ install_deps() {
 
 # 安装 npm 包
 install_npm() {
-    echo -e "\n▶️ 检查和安装 npm 包: ${TARGET_MODULE} ---"
+    echo -e "\n▶️ 检查和安装 npm 包: ${TARGET_MODULE}"
     if [ ! -d "node_modules" ] || ! npm list "${TARGET_MODULE}" --depth=0 >/dev/null 2>&1; then
         npm install "${TARGET_MODULE}"
     else
