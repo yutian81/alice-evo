@@ -86,17 +86,15 @@ install_environment() {
     if [ "$EUID" -eq 0 ]; then
         [ -f /etc/os-release ] || { echo "❌ 无法读取系统信息，请手动安装 nodejs 后重试"; exit 1; }
         . /etc/os-release
-
-        local APT_OPTS="-y -f -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
         export DEBIAN_FRONTEND=noninteractive
         
         case "$ID" in
             debian|ubuntu|devuan|kali)
                 echo "🔧 检测到 Debian 系，使用 apt 安装..."
                 apt-get update -y
-                apt-get install $APT_OPTS curl ca-certificates gnupg
+                apt-get install -y curl ca-certificates gnupg
                 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-                apt-get install $APT_OPTS nodejs
+                apt-get install -y nodejs
                 ;;
             centos|rhel|fedora|almalinux|rocky)
                 echo "🔧 检测到 RHEL 系，使用 yum/dnf 安装..."
