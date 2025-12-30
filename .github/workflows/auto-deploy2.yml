@@ -43,7 +43,6 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
           chmod +x alice-renew2.sh
-          # 如果成功，会输出：ID IP USER PASS HOST
           RESULT=$(./alice-renew2.sh)
           echo "NEW_INSTANCE_DATA=$RESULT" >> $GITHUB_OUTPUT
 
