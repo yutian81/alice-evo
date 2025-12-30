@@ -3,7 +3,6 @@
 # --- 配置区 ---
 SERVICE_NAME="nodejs-argo"
 SERVICE_DIR="/opt/${SERVICE_NAME}"
-SCRIPT_PATH="${SERVICE_DIR}/vpsnpm.sh"
 SUB_FILE="${SERVICE_DIR}/.npm/sub.txt"
 SCRIPT_URL="https://raw.githubusercontent.com/yutian81/alice-evo/main/vpsnpm.sh"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
@@ -62,21 +61,7 @@ clean_sysblock() {
     echo "✅ 系统环境已强制解锁并修复完成"
 }
 
-# 封装下载函数
-download_script() {
-    local DOWNLOAD_URL="$1"
-    local TARGET_PATH="$2"
-    
-    echo "▶️ 正在下载脚本并保存"
-    if curl -o "$TARGET_PATH" -Ls "$DOWNLOAD_URL" && chmod +x "$TARGET_PATH"; then
-        echo "✅ 脚本 ${TARGET_PATH} 下载成功并赋权" >&2
-    else
-        echo "❌ 脚本下载/保存/权限设置失败，退出..." >&2
-        exit 1
-    fi
-}
-
-# 下载启动脚本 vpsnpm.sh
+# 创建工作文件夹
 setup_environment() {
     # 权限检查：允许非 root 用户执行已安装的服务脚本，但首次安装必须是 root
     if [ "$EUID" -ne 0 ] && [ ! -f "$SERVICE_FILE" ] && [ ! -f "$OPENRC_SERVICE_FILE" ]; then
@@ -87,12 +72,6 @@ setup_environment() {
 
     mkdir -p "${SERVICE_DIR}"
     cd "${SERVICE_DIR}" || { echo "无法进入目录 ${SERVICE_DIR}，退出。"; exit 1; }
-
-    if [ ! -f "$SCRIPT_PATH" ]; then
-        download_script "$SCRIPT_URL" "$SCRIPT_PATH"
-    else
-        echo "✅ 脚本 $SCRIPT_PATH 已存在，跳过下载..." >&2
-    fi
 }
 
 # 检查并安装系统依赖与 Node.js 环境
