@@ -3,7 +3,6 @@
 # --- 1. 全局配置区 ---
 SERVICE_NAME="nodejs-argo"
 TARGET_MODULE="nodejs-argo"
-SCRIPT_URL="https://raw.githubusercontent.com/yutian81/alice-evo/main/noroot-npm.sh"
 
 # --- 2. 动态权限与路径识别 ---
 if [ "$EUID" -eq 0 ]; then
