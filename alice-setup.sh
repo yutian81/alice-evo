@@ -23,7 +23,7 @@ ssh_and_run_script() {
     sleep "$wait_time"
 
     for ((i=1; i<=max_retries; i++)); do
-        echo "arrow 正在尝试 SSH 连接 (第 $i/$max_retries 次)..." >&2
+        echo "正在尝试 SSH 连接 (第 $i/$max_retries 次)..." >&2
         local ssh_opts="-o StrictHostKeyChecking=no -o ConnectTimeout=${timeout} -o LogLevel=ERROR -o BatchMode=no"
 
         echo "优先以秘钥连接 SSH" >&2
