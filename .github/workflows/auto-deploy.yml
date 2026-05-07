@@ -1,8 +1,8 @@
 name: 🚀 Alice Evo VM 自动部署
 
 on:
-  schedule:
-    - cron: '0 19 * * *' # UTC时间19:00 = 北京时间次日03:00
+  #schedule:
+  #  - cron: '0 19 * * *' # UTC时间19:00 = 北京时间次日03:00
   # repository_dispatch:
   #   types: [service-down-alert]
   workflow_dispatch:
